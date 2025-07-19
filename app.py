@@ -428,62 +428,136 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     st.markdown('</div>', unsafe_allow_html=True)
 
 def render_rules_tab(data_provider: DataProvider, customer: str):
-    """Render the rules tab"""
+    """Render the rules tab matching the FIGMA design"""
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
-    st.markdown("### Rules")
-    st.markdown("Manage charge mapping rules and business logic.")
     
-    # Filter section (dark grey bar)
+    # Main section header with Create rule button aligned horizontally
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown("### Rules")
+        st.markdown("Use rules to rename and reclassify charges. If multiple rules match a charge, they'll be applied in order from top to bottom.")
+    with col2:
+        st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)  # Align with Rules heading
+        if st.button("Create rule", key="create_rule_rules_tab_btn"):
+            st.success("🎉 Rule creation initiated!")
+            st.info("This would open a rule creation form.")
+    
+    # Filters section
     st.markdown("""
     <style>
-        .filter-bar {
-            background-color: #374151;
-            border-radius: 6px;
+        .filter-container {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             padding: 1rem;
             margin: 1rem 0;
+            position: relative;
         }
-        .filter-dropdown {
-            background-color: white;
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .filter-content {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+        .filter-field {
+            flex: 1;
+        }
+        .filter-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        .collapse-button {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
             border-radius: 4px;
-            padding: 0.5rem;
-            margin: 0 0.5rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .help-button {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 0.5rem;
         }
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 1, 1, 1, 1, 1, 2])
+    # Create collapsible filter section
+    with st.expander("Filters", expanded=True):
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            st.markdown("**Rule type**")
+            st.selectbox("", ["All"], key="rule_type_filter", label_visibility="collapsed")
+        
+        with col2:
+            st.markdown("**Customer name**")
+            st.selectbox("", [customer], key="customer_filter", label_visibility="collapsed")
+        
+        with col3:
+            st.markdown("**Charge ID**")
+            st.selectbox("", ["Placeholder"], key="charge_id_filter", label_visibility="collapsed")
+        
+        with col4:
+            st.markdown("**Provider**")
+            st.selectbox("", ["TBD"], key="provider_filter", label_visibility="collapsed")
+        
+        with col5:
+            st.markdown("**Charge name**")
+            st.text_input("", value="(?i)Electric\\s*service.*", key="charge_name_filter", label_visibility="collapsed")
     
+    # Custom Rules Section
+    col1, col2 = st.columns([3, 1])
     with col1:
-        st.selectbox("Filter 1", ["All"], key="filter1")
+        st.markdown("### Custom")
+        st.markdown("Rules specific to your organization. These override global rules and can be reordered or edited.")
+    
     with col2:
-        st.selectbox("Filter 2", [customer], key="filter2")
-    with col3:
-        st.selectbox("Filter 3", ["Placeholder"], key="filter3")
-    with col4:
-        st.selectbox("Filter 4", ["TBD"], key="filter4")
-    with col5:
-        st.selectbox("Filter 5", ["(?i)Electric\\s*service.*"], key="filter5")
-    with col6:
-        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
-        if st.button("Edit priority", key="edit_priority_btn"):
-            st.success("Edit priority functionality would be implemented here")
-    with col7:
-        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
-        if st.button("Edit rule", key="edit_rule_btn"):
-            st.success("Edit rule functionality would be implemented here")
+        st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)  # Align with heading
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("Edit priority", key="edit_priority_custom_btn"):
+                selected_custom = [i for i, selected in enumerate(st.session_state.get('custom_selected', [])) if selected]
+                if selected_custom:
+                    st.success(f"Edit priority for {len(selected_custom)} selected custom rules")
+                else:
+                    st.warning("Please select at least one custom rule to edit priority")
+        with col_b:
+            if st.button("Edit rule", key="edit_rule_custom_btn"):
+                selected_custom = [i for i, selected in enumerate(st.session_state.get('custom_selected', [])) if selected]
+                if selected_custom:
+                    st.success(f"Edit rule for {len(selected_custom)} selected custom rules")
+                else:
+                    st.warning("Please select at least one custom rule to edit")
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Get custom rules data
+    custom_rules_df = data_provider.get_rules(customer)
     
-    # Get rules data
-    rules_df = data_provider.get_rules(customer)
+    # Initialize session state for custom selection
+    if 'custom_selected' not in st.session_state:
+        st.session_state.custom_selected = [False] * len(custom_rules_df)
     
-    # Add checkbox column for selection
-    rules_df.insert(0, 'Select', [False] * len(rules_df))
+    # Create a copy of the dataframe for display
+    display_custom_df = custom_rules_df.copy()
+    display_custom_df.insert(0, 'Select', st.session_state.custom_selected)
     
-    # Display the rules table
-    st.dataframe(
-        rules_df,
+    # Display the custom rules table
+    edited_custom_df = st.data_editor(
+        display_custom_df,
         use_container_width=True,
         hide_index=True,
         column_config={
@@ -496,8 +570,53 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             "Charge group heading": st.column_config.TextColumn("Charge group heading", width="medium"),
             "Charge category": st.column_config.TextColumn("Charge category", width="medium"),
             "Request type": st.column_config.TextColumn("Request type", width="medium")
-        }
+        },
+        key="custom_rules_table"
     )
+    
+    # Update session state based on edited dataframe
+    if edited_custom_df is not None:
+        if 'Select' in edited_custom_df.columns:
+            st.session_state.custom_selected = edited_custom_df['Select'].tolist()
+    
+    # Global Rules Section
+    st.markdown("### Global")
+    st.markdown("Rules that apply to all customers. If no customer-specific rule overrides them.")
+    
+    # Get global rules data (same as custom for demo)
+    global_rules_df = data_provider.get_rules(customer)
+    
+    # Initialize session state for global selection
+    if 'global_selected' not in st.session_state:
+        st.session_state.global_selected = [False] * len(global_rules_df)
+    
+    # Create a copy of the dataframe for display
+    display_global_df = global_rules_df.copy()
+    display_global_df.insert(0, 'Select', st.session_state.global_selected)
+    
+    # Display the global rules table with checkboxes
+    edited_global_df = st.data_editor(
+        display_global_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Select": st.column_config.CheckboxColumn("Select", default=False),
+            "Rule ID": st.column_config.NumberColumn("Rule ID", width="medium"),
+            "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
+            "Priority order": st.column_config.NumberColumn("Priority order", width="medium"),
+            "Charge name mapping": st.column_config.TextColumn("Charge name mapping", width="medium"),
+            "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
+            "Charge group heading": st.column_config.TextColumn("Charge group heading", width="medium"),
+            "Charge category": st.column_config.TextColumn("Charge category", width="medium"),
+            "Request type": st.column_config.TextColumn("Request type", width="medium")
+        },
+        key="global_rules_table"
+    )
+    
+    # Update session state based on edited dataframe
+    if edited_global_df is not None:
+        if 'Select' in edited_global_df.columns:
+            st.session_state.global_selected = edited_global_df['Select'].tolist()
     
     st.markdown('</div>', unsafe_allow_html=True)
 
