@@ -343,12 +343,24 @@ def render_sidebar(data_provider: DataProvider):
         
         # Rule creation form
         if st.session_state.show_rule_form:
-            # Header with cross icon and New rule text aligned horizontally
+            # Add CSS to reduce top padding when form is active
+            st.markdown("""
+            <style>
+            [data-testid="stSidebar"] {
+                padding-top: 0.5rem !important;
+            }
+            [data-testid="stSidebar"] > div:first-child {
+                padding-top: 0.5rem !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Header with cross icon and New rule text aligned horizontally - optimized spacing
             col1, col2 = st.columns([3, 1])
             with col1:
                 st.markdown("## New rule")
             with col2:
-                st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)  # Align with heading
+                st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)  # Reduced spacing
                 if st.button("✖️", key="close_rule_form", help="Close form"):
                     st.session_state.show_rule_form = False
                     st.rerun()
