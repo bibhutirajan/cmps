@@ -343,12 +343,16 @@ def render_sidebar(data_provider: DataProvider):
         
         # Rule creation form
         if st.session_state.show_rule_form:
-            st.markdown("### ✖️")
-            if st.button("Close", key="close_rule_form"):
-                st.session_state.show_rule_form = False
-                st.rerun()
+            # Header with cross icon and New rule text aligned horizontally
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown("## New rule")
+            with col2:
+                st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)  # Align with heading
+                if st.button("✖️", key="close_rule_form", help="Close form"):
+                    st.session_state.show_rule_form = False
+                    st.rerun()
             
-            st.markdown("## New rule")
             st.markdown("---")
             
             # If charge matches criteria section
