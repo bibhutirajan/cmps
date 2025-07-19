@@ -1,0 +1,507 @@
+/* =============================================================================
+   Charge Mapping Application - Main Stylesheet
+   ============================================================================= */
+
+/* =============================================================================
+   GLOBAL STYLES
+   ============================================================================= */
+
+/* Hide sidebar by default */
+.css-1d391kg {
+    display: none;
+}
+
+/* Remove white backgrounds from all elements */
+.stApp {
+    background-color: #0e1117 !important;
+}
+
+/* =============================================================================
+   HEADER STYLES
+   ============================================================================= */
+
+.main-header {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+/* =============================================================================
+   TAB CONTAINER STYLES
+   ============================================================================= */
+
+.tab-container {
+    background-color: transparent !important;
+    border-radius: 8px;
+    padding: 0.2rem;
+    margin: 0.2rem 0;
+}
+
+/* =============================================================================
+   BUTTON STYLES
+   ============================================================================= */
+
+.stButton > button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.stButton > button:hover {
+    background-color: #2563eb;
+}
+
+.stButton > button:active {
+    background-color: #1d4ed8;
+}
+
+/* Primary button */
+.btn-primary {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb !important;
+}
+
+/* Secondary button */
+.btn-secondary {
+    background-color: #6b7280 !important;
+    color: white !important;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563 !important;
+}
+
+/* Success button */
+.btn-success {
+    background-color: #10b981 !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background-color: #059669 !important;
+}
+
+/* Danger button */
+.btn-danger {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626 !important;
+}
+
+/* =============================================================================
+   METRIC CARD STYLES
+   ============================================================================= */
+
+.metric-card {
+    background-color: transparent !important;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.metric-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+/* =============================================================================
+   USER INFO STYLES
+   ============================================================================= */
+
+.user-info {
+    background-color: #374151 !important;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    color: white;
+}
+
+/* =============================================================================
+   SIDEBAR STYLES
+   ============================================================================= */
+
+/* Override any white backgrounds */
+div[data-testid="stSidebar"] {
+    background-color: #1e293b !important;
+}
+
+/* =============================================================================
+   DATAFRAME STYLES
+   ============================================================================= */
+
+/* Remove white backgrounds from dataframes */
+.stDataFrame {
+    background-color: transparent !important;
+}
+
+/* Data editor styling */
+.stDataFrame > div {
+    background-color: transparent !important;
+}
+
+/* Data editor table styling */
+.stDataFrame table {
+    background-color: transparent !important;
+}
+
+/* Data editor header styling */
+.stDataFrame thead {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* Data editor row styling */
+.stDataFrame tbody tr {
+    background-color: transparent !important;
+    color: white !important;
+}
+
+.stDataFrame tbody tr:hover {
+    background-color: #4b5563 !important;
+}
+
+/* Data editor cell styling */
+.stDataFrame td, .stDataFrame th {
+    border-color: #4b5563 !important;
+    color: white !important;
+}
+
+/* =============================================================================
+   FORM ELEMENT STYLES
+   ============================================================================= */
+
+/* Remove white backgrounds from selectboxes */
+.stSelectbox > div > div {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* Remove white backgrounds from number inputs */
+.stNumberInput > div > div {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* Remove white backgrounds from text inputs */
+.stTextInput > div > div {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* =============================================================================
+   FILTER BAR STYLES
+   ============================================================================= */
+
+.filter-bar {
+    background-color: #374151;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.filter-dropdown {
+    background-color: white;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin: 0 0.5rem;
+}
+
+/* =============================================================================
+   RULES TAB SPECIFIC STYLES
+   ============================================================================= */
+
+.rules-filter-container {
+    background-color: transparent !important;
+    border-radius: 6px;
+    padding: 0.5rem 0;
+    margin: 0.5rem 0;
+}
+
+.rules-table-container {
+    background-color: transparent !important;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+/* Override Streamlit selectbox styling for rules filters */
+.rules-filter-container .stSelectbox > div > div {
+    background-color: #374151 !important;
+    color: white !important;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+}
+
+.rules-filter-container .stSelectbox > div > div:hover {
+    border-color: #3b82f6;
+}
+
+/* Button styling for rules tab */
+.rules-filter-container .stButton > button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rules-filter-container .stButton > button:hover {
+    background-color: #2563eb;
+}
+
+/* Table styling for rules */
+.rules-table-container .stDataFrame {
+    background-color: transparent !important;
+}
+
+.rules-table-container .stDataFrame > div {
+    background-color: white !important;
+}
+
+/* Checkbox column styling */
+.rules-table-container .stCheckbox {
+    background-color: white !important;
+}
+
+/* =============================================================================
+   MODAL STYLES - REMOVED TO PREVENT CONFLICTS
+   ============================================================================= */
+
+/* Modal styles are now handled inline in the modal components */
+
+/* =============================================================================
+   FORM STYLES
+   ============================================================================= */
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #374151;
+    border-radius: 4px;
+    background-color: #374151;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #374151;
+    border-radius: 4px;
+    background-color: #374151;
+    color: white;
+    font-size: 0.875rem;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* =============================================================================
+   TABLE STYLES
+   ============================================================================= */
+
+.table-container {
+    background-color: transparent;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-header {
+    background-color: #374151;
+    color: white;
+    font-weight: 600;
+}
+
+.table-row {
+    border-bottom: 1px solid #374151;
+}
+
+.table-row:hover {
+    background-color: #374151;
+}
+
+/* =============================================================================
+   STATUS INDICATORS
+   ============================================================================= */
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.status-error {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* =============================================================================
+   LOADING STYLES
+   ============================================================================= */
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #374151;
+    border-radius: 50%;
+    border-top-color: #3b82f6;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    .main-header {
+        font-size: 1.5rem;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* =============================================================================
+   UTILITY CLASSES
+   ============================================================================= */
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-5 { margin-top: 1.25rem; }
+.mt-6 { margin-top: 1.5rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-5 { margin-bottom: 1.25rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 0.75rem; }
+.p-4 { padding: 1rem; }
+.p-5 { padding: 1.25rem; }
+.p-6 { padding: 1.5rem; }
+
+.hidden {
+    display: none;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-5 { gap: 1.25rem; }
+.gap-6 { gap: 1.5rem; } 
