@@ -166,6 +166,12 @@ def load_css():
             [data-testid="stSidebar"]:not(:has(.stButton[key="close_rule_form"])) {
                 /* Let Streamlit handle default collapsed state */
             }
+            
+            /* Make app sidebar narrower when no forms are active */
+            [data-testid="stSidebar"]:not(:has(.stButton[key="close_rule_form"])):not(:has(.stButton[key="close_edit_rule_form"])) {
+                max-width: 250px !important;
+                min-width: 200px !important;
+            }
         </style>
         """, unsafe_allow_html=True)
 
