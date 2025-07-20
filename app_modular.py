@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 # Import components
 from components.data.providers import get_data_provider, DataProvider
-from components.ui.sidebar import render_sidebar
+from components.ui.sidebar.main_sidebar import render_main_sidebar
 from components.ui.charges_tab import render_charges_tab
 from components.ui.rules_tab import render_rules_tab
 from components.ui.processed_files_tab import render_processed_files_tab
@@ -73,14 +73,96 @@ def load_css():
         # Fallback to inline CSS
         st.markdown("""
         <style>
+            /* Remove white backgrounds from all elements */
             .stApp {
                 background-color: #0e1117 !important;
             }
+            
             .main-header {
                 font-size: 2rem;
                 font-weight: bold;
                 color: #ffffff;
                 margin-bottom: 1rem;
+            }
+            .tab-container {
+                background-color: transparent !important;
+                border-radius: 8px;
+                padding: 0.2rem;
+                margin: 0.2rem 0;
+            }
+            .stButton > button {
+                background-color: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1rem;
+                font-weight: 500;
+            }
+            .stButton > button:hover {
+                background-color: #2563eb;
+            }
+            .metric-card {
+                background-color: transparent !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 1rem;
+                text-align: center;
+            }
+            .metric-value {
+                font-size: 2rem;
+                font-weight: bold;
+                color: #3b82f6;
+            }
+            .metric-label {
+                color: #6b7280;
+                font-size: 0.875rem;
+            }
+            .user-info {
+                background-color: #374151 !important;
+                border-radius: 8px;
+                padding: 1rem;
+                margin: 1rem 0;
+                color: white;
+            }
+            
+            /* Override any white backgrounds */
+            div[data-testid="stSidebar"] {
+                background-color: #1e293b !important;
+            }
+            
+            /* Remove white backgrounds from dataframes */
+            .stDataFrame {
+                background-color: transparent !important;
+            }
+            
+            /* Remove white backgrounds from selectboxes */
+            .stSelectbox > div > div {
+                background-color: #374151 !important;
+                color: white !important;
+            }
+            
+            /* Remove white backgrounds from number inputs */
+            .stNumberInput > div > div {
+                background-color: #374151 !important;
+                color: white !important;
+            }
+            
+            /* Ensure sidebar can expand when create rule form is active */
+            [data-testid="stSidebar"] {
+                transition: all 0.3s ease;
+            }
+            
+            /* Auto-expand sidebar ONLY when create rule form is active */
+            [data-testid="stSidebar"]:has(.stButton[key="close_rule_form"]) {
+                min-width: 400px !important;
+                max-width: 500px !important;
+                display: block !important;
+                visibility: visible !important;
+            }
+            
+            /* Keep sidebar collapsed by default when no form is active */
+            [data-testid="stSidebar"]:not(:has(.stButton[key="close_rule_form"])) {
+                /* Let Streamlit handle default collapsed state */
             }
         </style>
         """, unsafe_allow_html=True)
@@ -154,12 +236,22 @@ def main():
         """, unsafe_allow_html=True)
     
     # Render sidebar and get selected customer
-    customer = render_sidebar(data_provider)
+    customer = render_main_sidebar(data_provider)
     
     # Render edit priority modal as floating overlay if active
     if st.session_state.get('show_edit_priority_modal', False):
         from components.modals.edit_priority_modal import edit_priority_modal
         edit_priority_modal(data_provider, customer)
+    
+    # Render create rule modal in sidebar if active
+    if st.session_state.get('show_create_rule_modal', False):
+        from components.modals.create_rule_modal import create_rule_modal
+        create_rule_modal(data_provider, customer)
+    
+    # Render edit rule modal in sidebar if active
+    if st.session_state.get('show_edit_rule_modal', False):
+        from components.modals.edit_rule_modal import edit_rule_modal
+        edit_rule_modal(data_provider, customer)
     
     # Header
     render_header()

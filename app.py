@@ -366,7 +366,7 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     with col5:
         st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
         if st.button("Create rule", key="create_rule_btn"):
-            st.session_state.show_rule_form = True
+            st.session_state.show_create_rule_modal = True
             st.rerun()
     
     # Get charges data
@@ -423,7 +423,7 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     with col2:
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)  # Align with Rules heading
         if st.button("Create rule", key="create_rule_rules_tab_btn"):
-            st.session_state.show_rule_form = True
+            st.session_state.show_create_rule_modal = True
             st.rerun()
     
     # Filters section
@@ -649,8 +649,8 @@ def main():
     # Get data provider
     data_provider = get_data_provider()
     
-    # Import and use the new modular sidebar
-    from components.ui.sidebar import render_main_sidebar
+    # Import and use the new modularized sidebar
+    from components.ui.sidebar.main_sidebar import render_main_sidebar
     
     # Render sidebar and get selected customer
     customer = render_main_sidebar(data_provider)
