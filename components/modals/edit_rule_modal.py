@@ -432,6 +432,15 @@ def render_edit_rule_button(data_provider: DataProvider, context: Dict[str, Any]
     if not selected_rules:
         selected_rules = st.session_state.get('selected_rules', [])
     
+    # Get immediate selection state from both custom and global tables
+    custom_selected = st.session_state.get('custom_selected_rules', [])
+    global_selected = st.session_state.get('global_selected_rules', [])
+    immediate_selected = custom_selected + global_selected
+    
+    # Use immediate selection if available, otherwise fall back to session state
+    if immediate_selected:
+        selected_rules = immediate_selected
+    
     # Determine button state
     is_disabled = len(selected_rules) == 0
     button_text = "Edit rule"

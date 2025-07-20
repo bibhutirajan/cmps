@@ -107,6 +107,10 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     custom_rules_df = rules_df[rules_df['Customer name'] == customer].copy()
     
     if not custom_rules_df.empty:
+        # Initialize custom selection state
+        if 'custom_selected_rules' not in st.session_state:
+            st.session_state.custom_selected_rules = []
+        
         # Add checkbox column for selection
         custom_rules_df.insert(0, 'Select', [False] * len(custom_rules_df))
         
@@ -129,15 +133,16 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             key="custom_rules_table"
         )
         
-        # Update selected rules
+        # Update selected custom rules immediately
         selected_custom_rules = []
         for index, row in edited_custom_df.iterrows():
             if row.get('Select', False):
                 selected_custom_rules.append(row.to_dict())
         
-        st.session_state.selected_rules = selected_custom_rules
+        st.session_state.custom_selected_rules = selected_custom_rules
     else:
         st.info("No custom rules found for this customer.")
+        st.session_state.custom_selected_rules = []
     
     # Global Rules Section
     st.markdown("### Global")
@@ -147,6 +152,10 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     global_rules_df = rules_df.copy()
     
     if not global_rules_df.empty:
+        # Initialize global selection state
+        if 'global_selected_rules' not in st.session_state:
+            st.session_state.global_selected_rules = []
+        
         # Add checkbox column for selection
         global_rules_df.insert(0, 'Select', [False] * len(global_rules_df))
         
@@ -169,20 +178,25 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             key="global_rules_table"
         )
         
-        # Update selected rules (combine with custom rules)
+        # Update selected global rules immediately
         selected_global_rules = []
         for index, row in edited_global_df.iterrows():
             if row.get('Select', False):
                 selected_global_rules.append(row.to_dict())
         
-        # Combine custom and global selected rules
-        all_selected_rules = st.session_state.selected_rules + selected_global_rules
-        st.session_state.selected_rules = all_selected_rules
+        st.session_state.global_selected_rules = selected_global_rules
     else:
         st.info("No global rules found.")
+        st.session_state.global_selected_rules = []
+    
+    # Combine custom and global selected rules
+    custom_selected = st.session_state.get('custom_selected_rules', [])
+    global_selected = st.session_state.get('global_selected_rules', [])
+    all_selected_rules = custom_selected + global_selected
+    st.session_state.selected_rules = all_selected_rules
     
     # Display selected count
-    selected_count = len(st.session_state.selected_rules)
+    selected_count = len(all_selected_rules)
     if selected_count > 0:
         st.info(f"📋 {selected_count} rule(s) selected")
 
