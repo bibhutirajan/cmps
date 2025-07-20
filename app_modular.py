@@ -503,21 +503,23 @@ def main():
         # Add some spacing after the preview
         st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # Navigation tabs
-    tab1, tab2, tab3, tab4 = render_navigation_tabs()
-    
-    # Render tabs
-    with tab1:
-        render_charges_tab(data_provider, customer)
-    
-    with tab2:
-        render_rules_tab(data_provider, customer)
-    
-    with tab3:
-        render_processed_files_tab(data_provider, customer)
-    
-    with tab4:
-        render_regex_rules_tab(data_provider, customer)
+    # Only show navigation tabs when NOT in preview mode
+    if not (st.session_state.get('show_preview', False) or st.session_state.get('show_edit_preview', False)):
+        # Navigation tabs
+        tab1, tab2, tab3, tab4 = render_navigation_tabs()
+        
+        # Render tabs
+        with tab1:
+            render_charges_tab(data_provider, customer)
+        
+        with tab2:
+            render_rules_tab(data_provider, customer)
+        
+        with tab3:
+            render_processed_files_tab(data_provider, customer)
+        
+        with tab4:
+            render_regex_rules_tab(data_provider, customer)
 
 
 if __name__ == "__main__":
