@@ -505,20 +505,20 @@ def main():
     
     # Only show navigation tabs when NOT in preview mode
     if not (st.session_state.get('show_preview', False) or st.session_state.get('show_edit_preview', False)):
-        # Navigation tabs
-        tab1, tab2, tab3, tab4 = render_navigation_tabs()
+        # Navigation tabs with descriptive names
+        charges_tab, rules_tab, processed_files_tab, regex_rules_tab = render_navigation_tabs()
         
-        # Render tabs
-        with tab1:
+        # Render tabs with clear, descriptive variable names
+        with charges_tab:
             render_charges_tab(data_provider, customer)
         
-        with tab2:
+        with rules_tab:
             render_rules_tab(data_provider, customer)
         
-        with tab3:
+        with processed_files_tab:
             render_processed_files_tab(data_provider, customer)
         
-        with tab4:
+        with regex_rules_tab:
             render_regex_rules_tab(data_provider, customer)
 
 

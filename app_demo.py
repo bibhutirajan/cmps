@@ -122,8 +122,8 @@ col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     st.markdown('<div class="main-header">⚡ Charge Mapping</div>', unsafe_allow_html=True)
 
-# Navigation tabs in main area
-tab1, tab2, tab3, tab4 = st.tabs([
+# Navigation tabs in main area with descriptive names
+charges_tab, rules_tab, processed_files_tab, regex_rules_tab = st.tabs([
     "Charges", 
     "Rules", 
     "Processed files", 
@@ -156,7 +156,7 @@ def create_demo_rules():
     })
 
 # Charges Tab
-with tab1:
+with charges_tab:
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
     
     st.markdown("### Charges")
@@ -215,7 +215,7 @@ with tab1:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Rules Tab
-with tab2:
+with rules_tab:
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
     st.markdown("### Rules")
     st.markdown("Manage charge mapping rules and business logic.")
@@ -298,7 +298,7 @@ with tab2:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Processed files Tab
-with tab3:
+with processed_files_tab:
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
     st.markdown("### Processed files")
     st.markdown("View and manage processed charge files.")
@@ -315,7 +315,7 @@ with tab3:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Regex and rules Tab
-with tab4:
+with regex_rules_tab:
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
     st.markdown("### Regex and rules")
     st.markdown("Configure regex patterns and advanced rule matching.")

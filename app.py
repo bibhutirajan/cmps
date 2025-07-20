@@ -658,22 +658,22 @@ def main():
     # Header
     st.markdown('<div class="main-header">⚡ Charge Mapping</div>', unsafe_allow_html=True)
     
-    # Navigation tabs in main area
-    tab1, tab2, tab3, tab4 = st.tabs([
+    # Navigation tabs in main area with descriptive names
+    charges_tab, rules_tab, processed_files_tab, regex_rules_tab = st.tabs([
         "Charges", 
         "Rules", 
         "Processed files", 
         "Regex and rules"
     ])
     
-    # Render tabs with context managers
-    with tab1:
+    # Render tabs with clear, descriptive variable names
+    with charges_tab:
         render_charges_tab(data_provider, customer)
-    with tab2:
+    with rules_tab:
         render_rules_tab(data_provider, customer)
-    with tab3:
+    with processed_files_tab:
         render_processed_files_tab(data_provider, customer)
-    with tab4:
+    with regex_rules_tab:
         render_regex_rules_tab(data_provider, customer)
 
 if __name__ == "__main__":
