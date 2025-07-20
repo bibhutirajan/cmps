@@ -186,8 +186,13 @@ def render_create_rule_form(data_provider: DataProvider, customer: str):
     # Action buttons
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Save rule", key="save_rule_btn", type="primary"):
-            # Create rule data
+        if st.button("Cancel", key="cancel_rule_btn"):
+            st.session_state.show_create_rule_modal = False
+            st.rerun()
+    
+    with col2:
+        if st.button("Preview Changes", key="preview_changes_btn", type="primary"):
+            # Create rule data for preview
             rule_data = {
                 "customer": customer,
                 "provider": provider,
@@ -206,12 +211,7 @@ def render_create_rule_form(data_provider: DataProvider, customer: str):
                 "request_type": request_type
             }
             
-            # Save the rule
-            if data_provider.create_rule(rule_data):
-                st.session_state.show_create_rule_modal = False
-                st.rerun()
-    
-    with col2:
-        if st.button("Cancel", key="cancel_rule_btn"):
-            st.session_state.show_create_rule_modal = False
+            # Store rule data for preview and show preview
+            st.session_state.rule_form_data = rule_data
+            st.session_state.show_preview = True
             st.rerun() 

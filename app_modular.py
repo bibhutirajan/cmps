@@ -243,15 +243,7 @@ def main():
         from components.modals.edit_priority_modal import edit_priority_modal
         edit_priority_modal(data_provider, customer)
     
-    # Render create rule modal in sidebar if active
-    if st.session_state.get('show_create_rule_modal', False):
-        from components.modals.create_rule_modal import create_rule_modal
-        create_rule_modal(data_provider, customer)
-    
-    # Render edit rule modal in sidebar if active
-    if st.session_state.get('show_edit_rule_modal', False):
-        from components.modals.edit_rule_modal import edit_rule_modal
-        edit_rule_modal(data_provider, customer)
+    # Note: Modal rendering is handled by the sidebar components now
     
     # Header
     render_header()
@@ -350,6 +342,23 @@ def main():
                     value=True,
                     key="apply_to_existing"
                 )
+            
+            # Save and Cancel buttons
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col1:
+                if st.button("Cancel", key="cancel_preview_btn"):
+                    st.session_state.show_preview = False
+                    st.session_state.show_create_rule_modal = False
+                    st.rerun()
+            
+            with col3:
+                if st.button("Save Rule", key="save_rule_preview_btn", type="primary"):
+                    # Save the rule using the stored form data
+                    if data_provider.create_rule(st.session_state.rule_form_data):
+                        st.session_state.show_preview = False
+                        st.session_state.show_create_rule_modal = False
+                        st.success("Rule saved successfully!")
+                        st.rerun()
             
             st.markdown('</div>', unsafe_allow_html=True)
         
