@@ -15,11 +15,6 @@ PUT file://app.py @my_streamlit_stage/;
 PUT file://config.py @my_streamlit_stage/;
 PUT file://db.py @my_streamlit_stage/;
 PUT file://requirements.txt @my_streamlit_stage/;
-PUT file://pages/__init__.py @my_streamlit_stage/pages/;
-PUT file://pages/existing_rules.py @my_streamlit_stage/pages/;
-PUT file://pages/add_new_rule.py @my_streamlit_stage/pages/;
-PUT file://pages/approve_rules.py @my_streamlit_stage/pages/;
-PUT file://pages/uncategorized.py @my_streamlit_stage/pages/;
 "
 ```
 
