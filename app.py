@@ -246,18 +246,13 @@ def setup_page_config():
         page_title="Charge Mapping",
         page_icon="⚡",
         layout="wide",
-        initial_sidebar_state="collapsed" if config.SIDEBAR_COLLAPSED else "expanded"
+        initial_sidebar_state="collapsed"  # Sidebar collapsed by default
     )
 
 def setup_css():
     """Setup custom CSS"""
     st.markdown("""
     <style>
-        /* Hide sidebar by default */
-        .css-1d391kg {
-            display: none;
-        }
-        
         /* Remove white backgrounds from all elements */
         .stApp {
             background-color: #0e1117 !important;
@@ -331,181 +326,26 @@ def setup_css():
             background-color: #374151 !important;
             color: white !important;
         }
+        
+        /* Ensure sidebar can expand when create rule form is active */
+        [data-testid="stSidebar"] {
+            transition: all 0.3s ease;
+        }
+        
+        /* Auto-expand sidebar ONLY when create rule form is active */
+        [data-testid="stSidebar"]:has(.stButton[key="close_rule_form"]) {
+            min-width: 400px !important;
+            max-width: 500px !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        /* Keep sidebar collapsed by default when no form is active */
+        [data-testid="stSidebar"]:not(:has(.stButton[key="close_rule_form"])) {
+            /* Let Streamlit handle default collapsed state */
+        }
     </style>
     """, unsafe_allow_html=True)
-
-def render_sidebar(data_provider: DataProvider):
-    """Render the sidebar with customer selection, user info, and rule creation form"""
-    with st.sidebar:
-        # Initialize session state for rule creation form
-        if 'show_rule_form' not in st.session_state:
-            st.session_state.show_rule_form = False
-        
-        # Rule creation form
-        if st.session_state.show_rule_form:
-            # Add CSS to reduce top padding when form is active
-            st.markdown("""
-            <style>
-            [data-testid="stSidebar"] {
-                padding-top: 0.5rem !important;
-            }
-            [data-testid="stSidebar"] > div:first-child {
-                padding-top: 0.5rem !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Header with cross icon and New rule text aligned horizontally - optimized spacing
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown("## New rule")
-            with col2:
-                st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)  # Reduced spacing
-                if st.button("✖️", key="close_rule_form", help="Close form"):
-                    st.session_state.show_rule_form = False
-                    st.rerun()
-            
-            st.markdown("---")
-            
-            # If charge matches criteria section
-            st.markdown("### If charge matches criteria...")
-            
-            # Provider
-            provider = st.selectbox(
-                "Provider",
-                ["Atmos", "Other Provider", "Test Provider"],
-                index=0,
-                key="rule_provider"
-            )
-            
-            # Charge name with condition dropdown
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                charge_name_condition = st.selectbox(
-                    "Condition",
-                    ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                    key="charge_name_condition"
-                )
-            with col2:
-                charge_name = st.text_input(
-                    "Charge name",
-                    value="CHP rider",
-                    key="rule_charge_name"
-                )
-            
-            # Advanced conditions toggle
-            advanced_enabled = st.toggle("Advanced conditions", value=True, key="advanced_conditions")
-            
-            if advanced_enabled:
-                # Account number
-                col1, col2 = st.columns([1, 2])
-                with col1:
-                    account_condition = st.selectbox(
-                        "Condition",
-                        ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                        key="account_condition"
-                    )
-                with col2:
-                    account_number = st.text_input(
-                        "Account number",
-                        value="00000000",
-                        key="rule_account_number"
-                    )
-                
-                # Usage unit
-                usage_unit = st.selectbox(
-                    "Usage unit",
-                    ["kWh", "Therms", "Gallons", "Other"],
-                    index=0,
-                    key="rule_usage_unit"
-                )
-                
-                # Service type
-                service_type = st.selectbox(
-                    "Service type",
-                    ["Electric", "Gas", "Water", "Other"],
-                    index=0,
-                    key="rule_service_type"
-                )
-                
-                # Tariff
-                tariff = st.text_input(
-                    "Tariff",
-                    value="Lorem ipsum",
-                    key="rule_tariff"
-                )
-                
-                # Raw charge name
-                col1, col2 = st.columns([1, 2])
-                with col1:
-                    raw_charge_condition = st.selectbox(
-                        "Condition",
-                        ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                        key="raw_charge_condition"
-                    )
-                with col2:
-                    raw_charge_name = st.text_input(
-                        "Raw charge name",
-                        value="Lorem ipsum",
-                        key="rule_raw_charge_name"
-                    )
-            
-            st.markdown("---")
-            
-            # Then categorize the charge as section
-            st.markdown("### Then categorize the charge as...")
-            
-            charge_id = st.selectbox(
-                "Charge ID",
-                ["NewBatch", "Electric Service", "Gas Service", "Water Service", "Other"],
-                index=0,
-                key="rule_charge_id"
-            )
-            
-            st.markdown("---")
-            
-            # Action buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Cancel", key="cancel_rule_form"):
-                    st.session_state.show_rule_form = False
-                    st.rerun()
-            with col2:
-                if st.button("Preview changes", type="primary", key="preview_rule_changes"):
-                    st.success("Rule preview generated!")
-                    st.info("This would show a preview of how the rule would affect existing charges.")
-        
-        # Regular sidebar content (only show when form is not active)
-        else:
-            st.markdown("### 🏢 Customer Selection")
-            selected_customer = st.selectbox(
-                "Select Customer",
-                ["AmerescoFTP", "OtherCustomer", "NewCustomer", "TestCustomer"],
-                index=0
-            )
-
-            # Status indicator
-            if isinstance(data_provider, DemoDataProvider):
-                st.info("🎭 Demo Mode Active")
-            else:
-                st.success("✅ Connected to Snowflake")
-            
-            # Add some spacing
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            st.markdown("### 👤 User Information")
-            st.markdown('<div class="user-info">', unsafe_allow_html=True)
-            st.markdown("**Name:** John Doe")
-            st.markdown("**Role:** Admin")
-            st.markdown("**Email:** john.doe@company.com")
-            st.markdown("**Last Login:** Today, 2:30 PM")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Return selected customer (use default when form is active)
-        if not st.session_state.show_rule_form:
-            return selected_customer
-        else:
-            return "AmerescoFTP"  # Default customer when form is active
 
 def render_charges_tab(data_provider: DataProvider, customer: str):
     """Render the charges tab"""
@@ -809,8 +649,11 @@ def main():
     # Get data provider
     data_provider = get_data_provider()
     
+    # Import and use the new modular sidebar
+    from components.ui.sidebar import render_main_sidebar
+    
     # Render sidebar and get selected customer
-    customer = render_sidebar(data_provider)
+    customer = render_main_sidebar(data_provider)
     
     # Header
     st.markdown('<div class="main-header">⚡ Charge Mapping</div>', unsafe_allow_html=True)
