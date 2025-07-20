@@ -333,32 +333,8 @@ def main():
             </script>
             """, unsafe_allow_html=True)
             
-            # Action section at the bottom of the preview
-            st.divider()
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                apply_to_existing = st.checkbox(
-                    f"Apply rule to {len(preview_data)} existing charge(s)",
-                    value=True,
-                    key="apply_to_existing"
-                )
-            
-            # Save and Cancel buttons
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col1:
-                if st.button("Cancel", key="cancel_preview_btn"):
-                    st.session_state.show_preview = False
-                    st.session_state.show_create_rule_modal = False
-                    st.rerun()
-            
-            with col3:
-                if st.button("Save Rule", key="save_rule_preview_btn", type="primary"):
-                    # Save the rule using the stored form data
-                    if data_provider.create_rule(st.session_state.rule_form_data):
-                        st.session_state.show_preview = False
-                        st.session_state.show_create_rule_modal = False
-                        st.success("Rule saved successfully!")
-                        st.rerun()
+            # Clean preview - no buttons or checkboxes in main area
+            # Navigation will be handled in the sidebar
             
             st.markdown('</div>', unsafe_allow_html=True)
         
