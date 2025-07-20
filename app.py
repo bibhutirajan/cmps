@@ -205,65 +205,7 @@ def render_navigation_tabs():
 # PREVIEW RENDERING FUNCTIONS
 # =============================================================================
 
-def render_strikethrough_css():
-    """Render CSS for strikethrough effect on Current Charge ID column"""
-    st.markdown("""
-    <style>
-    /* Target the 5th column (Current Charge ID) in Streamlit dataframes */
-    [data-testid="stDataFrame"] td:nth-child(5) {
-        text-decoration: line-through !important;
-        color: #888888 !important;
-        font-style: italic !important;
-    }
-    
-    /* Alternative selectors for better compatibility */
-    .stDataFrame td:nth-child(5) {
-        text-decoration: line-through !important;
-        color: #888888 !important;
-        font-style: italic !important;
-    }
-    
-    /* Target by content for specific values */
-    [data-testid="stDataFrame"] td:has-text("Uncategorized"),
-    [data-testid="stDataFrame"] td:has-text("eh.special_regulatory_charges") {
-        text-decoration: line-through !important;
-        color: #888888 !important;
-        font-style: italic !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-
-def render_strikethrough_js():
-    """Render JavaScript for strikethrough effect"""
-    st.markdown("""
-    <script>
-    // Apply strikethrough to Current Charge ID column
-    function applyStrikethrough() {
-        const tables = document.querySelectorAll('[data-testid="stDataFrame"]');
-        tables.forEach(function(table) {
-            const rows = table.querySelectorAll('tr');
-            rows.forEach(function(row) {
-                const cells = row.querySelectorAll('td');
-                if (cells.length >= 5) { // Current Charge ID is 5th column (0-indexed)
-                    const currentChargeCell = cells[4]; // 5th column (0-indexed)
-                    if (currentChargeCell) {
-                        currentChargeCell.style.textDecoration = 'line-through';
-                        currentChargeCell.style.color = '#888888';
-                        currentChargeCell.style.fontStyle = 'italic';
-                    }
-                }
-            });
-        });
-    }
-    
-    // Apply immediately and with delays to ensure it works
-    applyStrikethrough();
-    setTimeout(applyStrikethrough, 100);
-    setTimeout(applyStrikethrough, 500);
-    setTimeout(applyStrikethrough, 1000);
-    </script>
-    """, unsafe_allow_html=True)
+# Strikethrough functionality is now handled natively in render_preview_dataframe
 
 
 def render_rule_summary_table(rule_data: Dict[str, Any], title: str = "Rule summary"):
@@ -287,7 +229,14 @@ def render_rule_summary_table(rule_data: Dict[str, Any], title: str = "Rule summ
 
 
 def render_preview_dataframe(preview_data: pd.DataFrame):
-    """Render preview data in a dataframe"""
+    """Render preview data in a dataframe with visual indicators for Current Charge ID"""
+    # Apply visual formatting to Current Charge ID column
+    if 'Current Charge ID' in preview_data.columns:
+        preview_data = preview_data.copy()
+        preview_data['Current Charge ID'] = preview_data['Current Charge ID'].apply(
+            lambda x: f"❌ {x}" if pd.notna(x) and str(x).strip() != '' else x
+        )
+    
     st.dataframe(
         preview_data,
         use_container_width=True,
@@ -297,7 +246,7 @@ def render_preview_dataframe(preview_data: pd.DataFrame):
             "Provider name": st.column_config.TextColumn("Provider name", width="medium"),
             "Account number": st.column_config.TextColumn("Account number", width="medium"),
             "Statement ID": st.column_config.TextColumn("Statement ID", width="medium"),
-            "Current Charge ID": st.column_config.TextColumn("Current Charge ID", width="medium"),
+            "Current Charge ID": st.column_config.TextColumn("Current Charge ID", width="medium", help="❌ indicates values that will be replaced"),
             "New Charge ID": st.column_config.TextColumn("New Charge ID", width="medium"),
             "Usage unit": st.column_config.TextColumn("Usage unit", width="small"),
             "Service": st.column_config.TextColumn("Service", width="small")
@@ -335,9 +284,7 @@ def render_create_rule_preview():
         # Display the preview table with native Streamlit dataframe
         render_preview_dataframe(preview_data)
         
-        # Add CSS and JS for strikethrough effect
-        render_strikethrough_css()
-        render_strikethrough_js()
+        # Strikethrough is now handled natively in render_preview_dataframe
         
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -376,9 +323,7 @@ def render_edit_rule_preview():
         # Display the preview table with native Streamlit dataframe
         render_preview_dataframe(preview_data)
         
-        # Add CSS and JS for strikethrough effect
-        render_strikethrough_css()
-        render_strikethrough_js()
+        # Strikethrough is now handled natively in render_preview_dataframe
         
         st.markdown('</div>', unsafe_allow_html=True)
     
