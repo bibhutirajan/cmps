@@ -350,8 +350,7 @@ def main():
             
             # Generate preview data based on the rule changes
             from components.modals.edit_rule_modal import generate_edit_preview_data
-            selected_rules = st.session_state.get('selected_rules_for_edit', [])
-            original_rule = selected_rules[0] if selected_rules else {}
+            original_rule = st.session_state.get('selected_rule_for_edit', {})
             preview_data = generate_edit_preview_data(st.session_state.edit_rule_form_data, original_rule)
             
             # Display the preview table with native Streamlit dataframe
@@ -428,16 +427,8 @@ def main():
             </script>
             """, unsafe_allow_html=True)
             
-            # Action section at the bottom of the preview
-            st.divider()
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                apply_to_existing = st.checkbox(
-                    f"Apply rule changes to {len(preview_data)} existing charge(s)",
-                    value=True,
-                    key="apply_edit_to_existing"
-                )
-            
+            # Clean preview - no buttons or checkboxes in main area
+            # Navigation will be handled in the sidebar
             st.markdown('</div>', unsafe_allow_html=True)
         
         # Add some spacing after the preview

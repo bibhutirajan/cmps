@@ -446,22 +446,13 @@ def render_edit_rule_button(data_provider: DataProvider, context: Dict[str, Any]
     
     # Check if button is clicked
     if st.button(button_text, key=button_key, type="secondary", use_container_width=False):
-        # Store customer and selected rules in session state for modal use
+        if len(selected_rules) == 0:
+            st.warning("Please select at least one rule to edit")
+            return
+        
+        # Store customer and selected rule data in session state for sidebar form
         st.session_state.selected_customer = customer
-        st.session_state.selected_rules_for_edit = selected_rules
-        # Show modal and force sidebar expansion
+        st.session_state.selected_rule_for_edit = selected_rules[0]  # Use first selected rule
+        # Show sidebar form
         st.session_state.show_edit_rule_modal = True
-        # Add CSS to immediately expand sidebar
-        st.markdown("""
-        <style>
-        /* Immediately expand sidebar when modal is triggered */
-        [data-testid="stSidebar"] {
-            width: 500px !important;
-            min-width: 500px !important;
-            max-width: 500px !important;
-            transform: translateX(0) !important;
-            transition: transform 0.3s ease !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
         st.rerun() 

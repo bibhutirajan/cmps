@@ -26,10 +26,19 @@ def render_main_sidebar(data_provider: DataProvider) -> str:
         st.session_state.show_create_rule_modal = False
     
     with st.sidebar:
+        # If in edit preview mode, show edit preview navigation
+        if st.session_state.get('show_edit_preview', False):
+            render_edit_preview_navigation(data_provider)
+            return "AmerescoFTP"  # Default customer when in edit preview
         # If in preview mode, show preview navigation
-        if st.session_state.get('show_preview', False):
+        elif st.session_state.get('show_preview', False):
             render_preview_navigation(data_provider)
             return "AmerescoFTP"  # Default customer when in preview
+        # If edit rule modal is active, show only the edit form
+        elif st.session_state.get('show_edit_rule_modal', False):
+            rule_data = st.session_state.get('selected_rule_for_edit', {})
+            render_edit_rule_form(data_provider, "AmerescoFTP", rule_data)
+            return "AmerescoFTP"
         # If create rule modal is active, show only the modal
         elif st.session_state.show_create_rule_modal:
             render_create_rule_form(data_provider, "AmerescoFTP")  # Default customer when modal is active
@@ -76,4 +85,45 @@ def render_preview_navigation(data_provider: DataProvider):
                 st.session_state.show_preview = False
                 st.session_state.show_create_rule_modal = False
                 st.success("✅ Rule saved successfully!")
+                st.rerun()
+
+
+def render_edit_preview_navigation(data_provider: DataProvider):
+    """
+    Render edit preview navigation in sidebar
+    
+    Args:
+        data_provider: The data provider instance
+    """
+    st.markdown("## 🔍 Edit Rule Preview")
+    st.markdown("Review the changes before saving.")
+    
+    # Rule application settings
+    st.markdown("### 📋 Application Settings")
+    apply_to_existing = st.checkbox(
+        "Apply rule changes to existing charges",
+        value=True,
+        key="apply_edit_to_existing_preview",
+        help="Apply these rule changes to existing charges that match the criteria"
+    )
+    
+    st.markdown("---")
+    
+    # Navigation buttons
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("← Back to Form", key="back_to_edit_form_sidebar_btn", help="Return to edit the rule"):
+            st.session_state.show_edit_preview = False
+            st.rerun()
+    
+    with col2:
+        if st.button("💾 Save Changes", key="save_edit_rule_sidebar_btn", type="primary", help="Save the rule changes and close form"):
+            # Save the rule changes using the stored form data
+            original_rule = st.session_state.get('selected_rule_for_edit', {})
+            rule_id = original_rule.get('Rule ID', 'unknown')
+            if data_provider.update_rule(rule_id, st.session_state.edit_rule_form_data):
+                st.session_state.show_edit_preview = False
+                st.session_state.show_edit_rule_modal = False
+                st.success("✅ Rule updated successfully!")
                 st.rerun() 
