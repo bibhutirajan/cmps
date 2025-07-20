@@ -24,7 +24,7 @@ def render_edit_rule_form(data_provider: DataProvider, customer: str, rule_data:
     [data-testid="stSidebar"]:has(.stButton[key="close_edit_rule_form"]) {
         padding-top: 0.5rem !important;
         min-width: 400px !important;
-        max-width: 500px !important;
+        max-width: 450px !important;
         display: block !important;
         visibility: visible !important;
         transform: translateX(0) !important;

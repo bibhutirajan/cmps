@@ -24,7 +24,7 @@ def render_create_rule_form(data_provider: DataProvider, customer: str):
     [data-testid="stSidebar"]:has(.stButton[key="close_rule_form"]) {
         padding-top: 0.5rem !important;
         min-width: 400px !important;
-        max-width: 500px !important;
+        max-width: 450px !important;
         display: block !important;
         visibility: visible !important;
         transform: translateX(0) !important;

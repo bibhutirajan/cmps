@@ -157,7 +157,7 @@ def load_css():
             /* Auto-expand sidebar ONLY when create rule form is active */
             [data-testid="stSidebar"]:has(.stButton[key="close_rule_form"]) {
                 min-width: 400px !important;
-                max-width: 500px !important;
+                max-width: 450px !important;
                 display: block !important;
                 visibility: visible !important;
             }
