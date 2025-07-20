@@ -9,8 +9,7 @@ The application follows a **modular clean architecture pattern** with clear sepa
 ### 📁 Project Structure
 ```
 cmps/
-├── app_modular.py                 # Main application (modular version)
-├── app_modular.py                 # Main application (modular version)
+├── app.py                         # Main application
 ├── config.py                      # Snowflake configuration
 ├── deployment_config.py           # Deployment configuration helper
 ├── requirements.txt               # Python dependencies
@@ -72,7 +71,7 @@ cmps/
 ### Option 1: Local Development (Demo Mode)
 ```bash
 # Run with demo data (default)
-streamlit run app_modular.py --server.port 8501
+streamlit run app.py --server.port 8501
 ```
 
 ### Option 2: Snowflake Native App
@@ -90,7 +89,7 @@ export SNOWFLAKE_SCHEMA=lakehouse
 export SNOWFLAKE_ROLE=your_role
 
 # Run the application
-streamlit run app_modular.py --server.port 8501
+streamlit run app.py --server.port 8501
 ```
 
 **Using Private Key Authentication (Recommended):**
@@ -107,7 +106,7 @@ export SNOWFLAKE_SCHEMA=lakehouse
 export SNOWFLAKE_ROLE=your_role
 
 # Run the application
-streamlit run app_modular.py --server.port 8501
+streamlit run app.py --server.port 8501
 ```
 
 ### Option 3: External Hosting with Snowflake
@@ -301,7 +300,7 @@ CREATE TABLE regex_rules (
 
 ### Code Structure
 ```
-app_modular.py
+app.py
 ├── Configuration Layer (AppConfig)
 ├── Data Abstraction Layer (DataProvider)
 ├── UI Components (components/ui/)
@@ -415,7 +414,7 @@ app_modular.py
 ### Local Development
 - [ ] Install dependencies: `pip install -r requirements.txt`
 - [ ] Set environment variables (optional)
-- [ ] Run: `streamlit run app_modular.py`
+- [ ] Run: `streamlit run app.py`
 
 ### Snowflake Native App
 - [ ] Configure Snowflake environment variables
