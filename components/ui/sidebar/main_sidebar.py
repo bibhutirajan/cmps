@@ -34,14 +34,24 @@ def render_main_sidebar(data_provider: DataProvider) -> str:
         elif st.session_state.get('show_preview', False):
             render_preview_navigation(data_provider)
             return "AmerescoFTP"  # Default customer when in preview
+        # If create rule modal is active, show create form (override edit if active)
+        elif st.session_state.show_create_rule_modal:
+            # Check if we just switched from edit to create and show warning
+            if st.session_state.get('_switched_from_edit_to_create', False):
+                st.warning("⚠️ Edit rule form was closed to open create rule form.")
+                # Clear the flag
+                st.session_state._switched_from_edit_to_create = False
+            render_create_rule_form(data_provider, "AmerescoFTP")  # Default customer when modal is active
+            return "AmerescoFTP"
         # If edit rule modal is active, show only the edit form
         elif st.session_state.get('show_edit_rule_modal', False):
+            # Check if we just switched from create to edit and show warning
+            if st.session_state.get('_switched_from_create_to_edit', False):
+                st.warning("⚠️ Create rule form was closed to open edit rule form.")
+                # Clear the flag
+                st.session_state._switched_from_create_to_edit = False
             rule_data = st.session_state.get('selected_rule_for_edit', {})
             render_edit_rule_form(data_provider, "AmerescoFTP", rule_data)
-            return "AmerescoFTP"
-        # If create rule modal is active, show only the modal
-        elif st.session_state.show_create_rule_modal:
-            render_create_rule_form(data_provider, "AmerescoFTP")  # Default customer when modal is active
             return "AmerescoFTP"
         else:
             # Show customer sidebar (default collapsed)
