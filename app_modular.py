@@ -6,6 +6,7 @@ This is the main application file with a modular architecture following best pra
 
 import streamlit as st
 import os
+import pandas as pd
 from typing import Optional
 from dataclasses import dataclass
 
@@ -255,6 +256,40 @@ def main():
             st.markdown("### 🔍 Rule Preview")
             st.markdown("This rule will update the Charge ID for the charges listed below. Review the changes before saving.")
             
+            # Rule summary section for new rule
+            rule_form_data = st.session_state.get('rule_form_data', {})
+            
+            # Create rule summary data for new rule
+            rule_summary_data = {
+                "Rule ID": ["New"],
+                "Customer name": [rule_form_data.get('customer', 'AmerescoFTP')],
+                "Priority order": ["Auto-assigned"],
+                "Charge name mappi...": [rule_form_data.get('charge_name', 'CHP Rider')],
+                "Charge ID": [rule_form_data.get('charge_id', 'NewBatch')],
+                "Charge grou...": [""],
+                "Charge category": ["ch.usage_charge"]
+            }
+            
+            # Display rule summary table
+            st.markdown("#### Rule summary")
+            rule_summary_df = pd.DataFrame(rule_summary_data)
+            st.dataframe(
+                rule_summary_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Rule ID": st.column_config.TextColumn("Rule ID", width="small"),
+                    "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
+                    "Priority order": st.column_config.TextColumn("Priority order", width="small"),
+                    "Charge name mappi...": st.column_config.TextColumn("Charge name mappi...", width="medium"),
+                    "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
+                    "Charge grou...": st.column_config.TextColumn("Charge grou...", width="medium"),
+                    "Charge category": st.column_config.TextColumn("Charge category", width="medium")
+                }
+            )
+            
+            st.markdown("---")
+            
             # Generate preview data based on the rule
             from components.modals.create_rule_modal import generate_preview_data
             preview_data = generate_preview_data(st.session_state.rule_form_data)
@@ -346,11 +381,45 @@ def main():
         # Edit rule preview
         with st.container():
             st.markdown("### 🔍 Edit Rule Preview")
-            st.markdown("This rule update will modify the Charge ID for the charges listed below. Review the changes before saving.")
+            st.markdown("These changes will affect all the charges listed below. Review the changes before saving.")
+            
+            # Rule summary section
+            original_rule = st.session_state.get('selected_rule_for_edit', {})
+            updated_rule_data = st.session_state.get('edit_rule_form_data', {})
+            
+            # Create rule summary data
+            rule_summary_data = {
+                "Rule ID": [original_rule.get('Rule ID', '8912000')],
+                "Customer name": [original_rule.get('Customer name', 'AmerescoFTP')],
+                "Priority order": [original_rule.get('Priority order', '3101')],
+                "Charge name mappi...": [original_rule.get('Charge name mapping', '(?i)Electric\\s*servic...')],
+                "Charge ID": [updated_rule_data.get('charge_id', 'NewBatch')],
+                "Charge grou...": [original_rule.get('Charge group heading', '')],
+                "Charge category": [original_rule.get('Charge category', 'ch.usage_charge')]
+            }
+            
+            # Display rule summary table
+            st.markdown("#### Rule summary")
+            rule_summary_df = pd.DataFrame(rule_summary_data)
+            st.dataframe(
+                rule_summary_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Rule ID": st.column_config.NumberColumn("Rule ID", width="small"),
+                    "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
+                    "Priority order": st.column_config.NumberColumn("Priority order", width="small"),
+                    "Charge name mappi...": st.column_config.TextColumn("Charge name mappi...", width="medium"),
+                    "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
+                    "Charge grou...": st.column_config.TextColumn("Charge grou...", width="medium"),
+                    "Charge category": st.column_config.TextColumn("Charge category", width="medium")
+                }
+            )
+            
+            st.markdown("---")
             
             # Generate preview data based on the rule changes
             from components.modals.edit_rule_modal import generate_edit_preview_data
-            original_rule = st.session_state.get('selected_rule_for_edit', {})
             preview_data = generate_edit_preview_data(st.session_state.edit_rule_form_data, original_rule)
             
             # Display the preview table with native Streamlit dataframe
