@@ -10,7 +10,7 @@ The application follows a **modular clean architecture pattern** with clear sepa
 ```
 cmps/
 ├── app_modular.py                 # Main application (modular version)
-├── app.py                         # Original application
+├── app_modular.py                 # Main application (modular version)
 ├── config.py                      # Snowflake configuration
 ├── deployment_config.py           # Deployment configuration helper
 ├── requirements.txt               # Python dependencies

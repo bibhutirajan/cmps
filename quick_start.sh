@@ -13,7 +13,7 @@ echo ""
 # Step 2: Upload files
 echo "📤 Step 2: Uploading files to Snowflake stage..."
 snowsql -c your_connection -q "
-PUT file://app.py @my_streamlit_stage/;
+PUT file://app_modular.py @my_streamlit_stage/;
 PUT file://config.py @my_streamlit_stage/;
 PUT file://db.py @my_streamlit_stage/;
 PUT file://requirements.txt @my_streamlit_stage/;
@@ -29,7 +29,7 @@ echo "🎯 Step 3: Creating Streamlit app..."
 snowsql -c your_connection -q "
 CREATE OR REPLACE STREAMLIT charge_mapping_app
 FROM @my_streamlit_stage
-MAIN_FILE = 'app.py'
+MAIN_FILE = 'app_modular.py'
 QUERY_WAREHOUSE = COMPUTE_WH;
 "
 
