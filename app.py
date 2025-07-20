@@ -7,7 +7,7 @@ This is the main application file with a modular architecture following best pra
 import streamlit as st
 import os
 import pandas as pd
-from typing import Optional
+from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
 # Import components
@@ -17,6 +17,7 @@ from components.ui.charges_tab import render_charges_tab
 from components.ui.rules_tab import render_rules_tab
 from components.ui.processed_files_tab import render_processed_files_tab
 from components.ui.regex_rules_tab import render_regex_rules_tab
+
 
 
 
@@ -195,314 +196,228 @@ def render_navigation_tabs():
 
 
 # =============================================================================
-# MAIN APPLICATION
+# PREVIEW RENDERING FUNCTIONS
 # =============================================================================
 
-def main():
-    """Main application function"""
-    # Setup
-    setup_page_config()
-    load_css()
-    load_js()
+def render_strikethrough_css():
+    """Render CSS for strikethrough effect on Current Charge ID column"""
+    st.markdown("""
+    <style>
+    /* Target the 5th column (Current Charge ID) in Streamlit dataframes */
+    [data-testid="stDataFrame"] td:nth-child(5) {
+        text-decoration: line-through !important;
+        color: #888888 !important;
+        font-style: italic !important;
+    }
     
-    # Get data provider
-    data_provider = get_data_provider(config.SNOWFLAKE_ENABLED)
+    /* Alternative selectors for better compatibility */
+    .stDataFrame td:nth-child(5) {
+        text-decoration: line-through !important;
+        color: #888888 !important;
+        font-style: italic !important;
+    }
     
-    # Check if modal should be shown and handle sidebar expansion
-    if st.session_state.get('show_create_rule_modal', False) or st.session_state.get('show_edit_rule_modal', False):
-        # Force sidebar to be expanded when modal is shown
-        st.markdown("""
-        <style>
-        /* Force sidebar to be expanded when modal is active */
-        [data-testid="stSidebar"] {
-            width: 500px !important;
-            min-width: 500px !important;
-            max-width: 500px !important;
-            transform: translateX(0) !important;
-            transition: transform 0.3s ease !important;
+    /* Target by content for specific values */
+    [data-testid="stDataFrame"] td:has-text("Uncategorized"),
+    [data-testid="stDataFrame"] td:has-text("eh.special_regulatory_charges") {
+        text-decoration: line-through !important;
+        color: #888888 !important;
+        font-style: italic !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def render_strikethrough_js():
+    """Render JavaScript for strikethrough effect"""
+    st.markdown("""
+    <script>
+    // Apply strikethrough to Current Charge ID column
+    function applyStrikethrough() {
+        const tables = document.querySelectorAll('[data-testid="stDataFrame"]');
+        tables.forEach(function(table) {
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 5) { // Current Charge ID is 5th column (0-indexed)
+                    const currentChargeCell = cells[4]; // 5th column (0-indexed)
+                    if (currentChargeCell) {
+                        currentChargeCell.style.textDecoration = 'line-through';
+                        currentChargeCell.style.color = '#888888';
+                        currentChargeCell.style.fontStyle = 'italic';
+                    }
+                }
+            });
+        });
+    }
+    
+    // Apply immediately and with delays to ensure it works
+    applyStrikethrough();
+    setTimeout(applyStrikethrough, 100);
+    setTimeout(applyStrikethrough, 500);
+    setTimeout(applyStrikethrough, 1000);
+    </script>
+    """, unsafe_allow_html=True)
+
+
+def render_rule_summary_table(rule_data: Dict[str, Any], title: str = "Rule summary"):
+    """Render a rule summary table"""
+    st.markdown(f"#### {title}")
+    rule_summary_df = pd.DataFrame([rule_data])
+    st.dataframe(
+        rule_summary_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Rule ID": st.column_config.TextColumn("Rule ID", width="small"),
+            "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
+            "Priority order": st.column_config.TextColumn("Priority order", width="small"),
+            "Charge name mappi...": st.column_config.TextColumn("Charge name mappi...", width="medium"),
+            "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
+            "Charge grou...": st.column_config.TextColumn("Charge grou...", width="medium"),
+            "Charge category": st.column_config.TextColumn("Charge category", width="medium")
+        }
+    )
+
+
+def render_preview_dataframe(preview_data: pd.DataFrame):
+    """Render preview data in a dataframe"""
+    st.dataframe(
+        preview_data,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Charge name": st.column_config.TextColumn("Charge name", width="medium"),
+            "Provider name": st.column_config.TextColumn("Provider name", width="medium"),
+            "Account number": st.column_config.TextColumn("Account number", width="medium"),
+            "Statement ID": st.column_config.TextColumn("Statement ID", width="medium"),
+            "Current Charge ID": st.column_config.TextColumn("Current Charge ID", width="medium"),
+            "New Charge ID": st.column_config.TextColumn("New Charge ID", width="medium"),
+            "Usage unit": st.column_config.TextColumn("Usage unit", width="small"),
+            "Service": st.column_config.TextColumn("Service", width="small")
+        }
+    )
+
+
+def render_create_rule_preview():
+    """Render the create rule preview"""
+    with st.container():
+        st.markdown("### 🔍 Rule Preview")
+        st.markdown("This rule will update the Charge ID for the charges listed below. Review the changes before saving.")
+        
+        # Rule summary section for new rule
+        rule_form_data = st.session_state.get('rule_form_data', {})
+        
+        # Create rule summary data for new rule
+        rule_summary_data = {
+            "Rule ID": ["New"],
+            "Customer name": [rule_form_data.get('customer', 'AmerescoFTP')],
+            "Priority order": ["Auto-assigned"],
+            "Charge name mappi...": [rule_form_data.get('charge_name', 'CHP Rider')],
+            "Charge ID": [rule_form_data.get('charge_id', 'NewBatch')],
+            "Charge grou...": [""],
+            "Charge category": ["ch.usage_charge"]
         }
         
-        /* Ensure sidebar is visible */
-        [data-testid="stSidebar"] > div {
-            width: 500px !important;
-            min-width: 500px !important;
-            max-width: 500px !important;
+        render_rule_summary_table(rule_summary_data)
+        st.markdown("---")
+        
+        # Generate preview data based on the rule
+        from components.modals.create_rule_modal import generate_preview_data
+        preview_data = generate_preview_data(st.session_state.rule_form_data)
+        
+        # Display the preview table with native Streamlit dataframe
+        render_preview_dataframe(preview_data)
+        
+        # Add CSS and JS for strikethrough effect
+        render_strikethrough_css()
+        render_strikethrough_js()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Add some spacing after the preview
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+def render_edit_rule_preview():
+    """Render the edit rule preview"""
+    with st.container():
+        st.markdown("### 🔍 Edit Rule Preview")
+        st.markdown("These changes will affect all the charges listed below. Review the changes before saving.")
+        
+        # Rule summary section
+        original_rule = st.session_state.get('selected_rule_for_edit', {})
+        updated_rule_data = st.session_state.get('edit_rule_form_data', {})
+        
+        # Create rule summary data
+        rule_summary_data = {
+            "Rule ID": [original_rule.get('Rule ID', '8912000')],
+            "Customer name": [original_rule.get('Customer name', 'AmerescoFTP')],
+            "Priority order": [original_rule.get('Priority order', '3101')],
+            "Charge name mappi...": [original_rule.get('Charge name mapping', '(?i)Electric\\s*servic...')],
+            "Charge ID": [updated_rule_data.get('charge_id', 'NewBatch')],
+            "Charge grou...": [original_rule.get('Charge group heading', '')],
+            "Charge category": [original_rule.get('Charge category', 'ch.usage_charge')]
         }
         
-        /* Hide the sidebar collapse button when modal is active */
-        [data-testid="stSidebar"] [data-testid="collapsedControl"] {
-            display: none !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        render_rule_summary_table(rule_summary_data)
+        st.markdown("---")
+        
+        # Generate preview data based on the rule changes
+        from components.modals.edit_rule_modal import generate_edit_preview_data
+        preview_data = generate_edit_preview_data(st.session_state.edit_rule_form_data, original_rule)
+        
+        # Display the preview table with native Streamlit dataframe
+        render_preview_dataframe(preview_data)
+        
+        # Add CSS and JS for strikethrough effect
+        render_strikethrough_css()
+        render_strikethrough_js()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    # Render sidebar and get selected customer
-    customer = render_main_sidebar(data_provider)
+    # Add some spacing after the preview
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+
+def render_sidebar_expansion_css():
+    """Render CSS to force sidebar expansion when modal is active"""
+    st.markdown("""
+    <style>
+    /* Force sidebar to be expanded when modal is active */
+    [data-testid="stSidebar"] {
+        width: 500px !important;
+        min-width: 500px !important;
+        max-width: 500px !important;
+        transform: translateX(0) !important;
+        transition: transform 0.3s ease !important;
+    }
     
-    # Render edit priority modal as floating overlay if active
-    if st.session_state.get('show_edit_priority_modal', False):
-        from components.modals.edit_priority_modal import edit_priority_modal
-        edit_priority_modal(data_provider, customer)
+    /* Ensure sidebar is visible */
+    [data-testid="stSidebar"] > div {
+        width: 500px !important;
+        min-width: 500px !important;
+        max-width: 500px !important;
+    }
     
-    # Note: Modal rendering is handled by the sidebar components now
-    
-    # Header
-    render_header()
-    
-    # Render preview on main page if in preview mode - BEFORE tabs
+    /* Hide the sidebar collapse button when modal is active */
+    [data-testid="stSidebar"] [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def render_preview_content():
+    """Render preview content based on session state"""
     if st.session_state.get('show_preview', False) and st.session_state.get('show_create_rule_modal', False):
-        # Create rule preview
-        with st.container():
-            st.markdown("### 🔍 Rule Preview")
-            st.markdown("This rule will update the Charge ID for the charges listed below. Review the changes before saving.")
-            
-            # Rule summary section for new rule
-            rule_form_data = st.session_state.get('rule_form_data', {})
-            
-            # Create rule summary data for new rule
-            rule_summary_data = {
-                "Rule ID": ["New"],
-                "Customer name": [rule_form_data.get('customer', 'AmerescoFTP')],
-                "Priority order": ["Auto-assigned"],
-                "Charge name mappi...": [rule_form_data.get('charge_name', 'CHP Rider')],
-                "Charge ID": [rule_form_data.get('charge_id', 'NewBatch')],
-                "Charge grou...": [""],
-                "Charge category": ["ch.usage_charge"]
-            }
-            
-            # Display rule summary table
-            st.markdown("#### Rule summary")
-            rule_summary_df = pd.DataFrame(rule_summary_data)
-            st.dataframe(
-                rule_summary_df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Rule ID": st.column_config.TextColumn("Rule ID", width="small"),
-                    "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
-                    "Priority order": st.column_config.TextColumn("Priority order", width="small"),
-                    "Charge name mappi...": st.column_config.TextColumn("Charge name mappi...", width="medium"),
-                    "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
-                    "Charge grou...": st.column_config.TextColumn("Charge grou...", width="medium"),
-                    "Charge category": st.column_config.TextColumn("Charge category", width="medium")
-                }
-            )
-            
-            st.markdown("---")
-            
-            # Generate preview data based on the rule
-            from components.modals.create_rule_modal import generate_preview_data
-            preview_data = generate_preview_data(st.session_state.rule_form_data)
-            
-            # Display the preview table with native Streamlit dataframe
-            st.dataframe(
-                preview_data,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Charge name": st.column_config.TextColumn("Charge name", width="medium"),
-                    "Provider name": st.column_config.TextColumn("Provider name", width="medium"),
-                    "Account number": st.column_config.TextColumn("Account number", width="medium"),
-                    "Statement ID": st.column_config.TextColumn("Statement ID", width="medium"),
-                    "Current Charge ID": st.column_config.TextColumn("Current Charge ID", width="medium"),
-                    "New Charge ID": st.column_config.TextColumn("New Charge ID", width="medium"),
-                    "Usage unit": st.column_config.TextColumn("Usage unit", width="small"),
-                    "Service": st.column_config.TextColumn("Service", width="small")
-                }
-            )
-            
-            # Add CSS for strikethrough effect on Current Charge ID column
-            st.markdown("""
-            <style>
-            /* Target the 5th column (Current Charge ID) in Streamlit dataframes */
-            [data-testid="stDataFrame"] td:nth-child(5) {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            
-            /* Alternative selectors for better compatibility */
-            .stDataFrame td:nth-child(5) {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            
-            /* Target by content for specific values */
-            [data-testid="stDataFrame"] td:has-text("Uncategorized"),
-            [data-testid="stDataFrame"] td:has-text("eh.special_regulatory_charges") {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Add JavaScript to apply strikethrough effect
-            st.markdown("""
-            <script>
-            // Apply strikethrough to Current Charge ID column
-            function applyStrikethrough() {
-                const tables = document.querySelectorAll('[data-testid="stDataFrame"]');
-                tables.forEach(function(table) {
-                    const rows = table.querySelectorAll('tr');
-                    rows.forEach(function(row) {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length >= 5) { // Current Charge ID is 5th column (0-indexed)
-                            const currentChargeCell = cells[4]; // 5th column (0-indexed)
-                            if (currentChargeCell) {
-                                currentChargeCell.style.textDecoration = 'line-through';
-                                currentChargeCell.style.color = '#888888';
-                                currentChargeCell.style.fontStyle = 'italic';
-                            }
-                        }
-                    });
-                });
-            }
-            
-            // Apply immediately and with delays to ensure it works
-            applyStrikethrough();
-            setTimeout(applyStrikethrough, 100);
-            setTimeout(applyStrikethrough, 500);
-            setTimeout(applyStrikethrough, 1000);
-            </script>
-            """, unsafe_allow_html=True)
-            
-            # Clean preview - no buttons or checkboxes in main area
-            # Navigation will be handled in the sidebar
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Add some spacing after the preview
-        st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Render edit rule preview on main page if in edit preview mode
+        render_create_rule_preview()
     elif st.session_state.get('show_edit_preview', False) and st.session_state.get('show_edit_rule_modal', False):
-        # Edit rule preview
-        with st.container():
-            st.markdown("### 🔍 Edit Rule Preview")
-            st.markdown("These changes will affect all the charges listed below. Review the changes before saving.")
-            
-            # Rule summary section
-            original_rule = st.session_state.get('selected_rule_for_edit', {})
-            updated_rule_data = st.session_state.get('edit_rule_form_data', {})
-            
-            # Create rule summary data
-            rule_summary_data = {
-                "Rule ID": [original_rule.get('Rule ID', '8912000')],
-                "Customer name": [original_rule.get('Customer name', 'AmerescoFTP')],
-                "Priority order": [original_rule.get('Priority order', '3101')],
-                "Charge name mappi...": [original_rule.get('Charge name mapping', '(?i)Electric\\s*servic...')],
-                "Charge ID": [updated_rule_data.get('charge_id', 'NewBatch')],
-                "Charge grou...": [original_rule.get('Charge group heading', '')],
-                "Charge category": [original_rule.get('Charge category', 'ch.usage_charge')]
-            }
-            
-            # Display rule summary table
-            st.markdown("#### Rule summary")
-            rule_summary_df = pd.DataFrame(rule_summary_data)
-            st.dataframe(
-                rule_summary_df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Rule ID": st.column_config.NumberColumn("Rule ID", width="small"),
-                    "Customer name": st.column_config.TextColumn("Customer name", width="medium"),
-                    "Priority order": st.column_config.NumberColumn("Priority order", width="small"),
-                    "Charge name mappi...": st.column_config.TextColumn("Charge name mappi...", width="medium"),
-                    "Charge ID": st.column_config.TextColumn("Charge ID", width="medium"),
-                    "Charge grou...": st.column_config.TextColumn("Charge grou...", width="medium"),
-                    "Charge category": st.column_config.TextColumn("Charge category", width="medium")
-                }
-            )
-            
-            st.markdown("---")
-            
-            # Generate preview data based on the rule changes
-            from components.modals.edit_rule_modal import generate_edit_preview_data
-            preview_data = generate_edit_preview_data(st.session_state.edit_rule_form_data, original_rule)
-            
-            # Display the preview table with native Streamlit dataframe
-            st.dataframe(
-                preview_data,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Charge name": st.column_config.TextColumn("Charge name", width="medium"),
-                    "Provider name": st.column_config.TextColumn("Provider name", width="medium"),
-                    "Account number": st.column_config.TextColumn("Account number", width="medium"),
-                    "Statement ID": st.column_config.TextColumn("Statement ID", width="medium"),
-                    "Current Charge ID": st.column_config.TextColumn("Current Charge ID", width="medium"),
-                    "New Charge ID": st.column_config.TextColumn("New Charge ID", width="medium"),
-                    "Usage unit": st.column_config.TextColumn("Usage unit", width="small"),
-                    "Service": st.column_config.TextColumn("Service", width="small")
-                }
-            )
-            
-            # Add CSS for strikethrough effect on Current Charge ID column
-            st.markdown("""
-            <style>
-            /* Target the 5th column (Current Charge ID) in Streamlit dataframes */
-            [data-testid="stDataFrame"] td:nth-child(5) {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            
-            /* Alternative selectors for better compatibility */
-            .stDataFrame td:nth-child(5) {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            
-            /* Target by content for specific values */
-            [data-testid="stDataFrame"] td:has-text("Uncategorized"),
-            [data-testid="stDataFrame"] td:has-text("eh.special_regulatory_charges") {
-                text-decoration: line-through !important;
-                color: #888888 !important;
-                font-style: italic !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Add JavaScript to apply strikethrough effect
-            st.markdown("""
-            <script>
-            // Apply strikethrough to Current Charge ID column
-            function applyStrikethrough() {
-                const tables = document.querySelectorAll('[data-testid="stDataFrame"]');
-                tables.forEach(function(table) {
-                    const rows = table.querySelectorAll('tr');
-                    rows.forEach(function(row) {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length >= 5) { // Current Charge ID is 5th column (0-indexed)
-                            const currentChargeCell = cells[4]; // 5th column (0-indexed)
-                            if (currentChargeCell) {
-                                currentChargeCell.style.textDecoration = 'line-through';
-                                currentChargeCell.style.color = '#888888';
-                                currentChargeCell.style.fontStyle = 'italic';
-                            }
-                        }
-                    });
-                });
-            }
-            
-            // Apply immediately and with delays to ensure it works
-            applyStrikethrough();
-            setTimeout(applyStrikethrough, 100);
-            setTimeout(applyStrikethrough, 500);
-            setTimeout(applyStrikethrough, 1000);
-            </script>
-            """, unsafe_allow_html=True)
-            
-            # Clean preview - no buttons or checkboxes in main area
-            # Navigation will be handled in the sidebar
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Add some spacing after the preview
-        st.markdown("<br><br>", unsafe_allow_html=True)
-    
+        render_edit_rule_preview()
+
+
+def render_main_content(data_provider: DataProvider, customer: str):
+    """Render the main content area with tabs"""
     # Only show navigation tabs when NOT in preview mode
     if not (st.session_state.get('show_preview', False) or st.session_state.get('show_edit_preview', False)):
         # Navigation tabs with descriptive names
@@ -520,6 +435,42 @@ def main():
         
         with regex_rules_tab:
             render_regex_rules_tab(data_provider, customer)
+
+
+# =============================================================================
+# MAIN APPLICATION
+# =============================================================================
+
+def main():
+    """Main application function"""
+    # Setup
+    setup_page_config()
+    load_css()
+    load_js()
+    
+    # Get data provider
+    data_provider = get_data_provider(config.SNOWFLAKE_ENABLED)
+    
+    # Check if modal should be shown and handle sidebar expansion
+    if st.session_state.get('show_create_rule_modal', False) or st.session_state.get('show_edit_rule_modal', False):
+        render_sidebar_expansion_css()
+    
+    # Render sidebar and get selected customer
+    customer = render_main_sidebar(data_provider)
+    
+    # Render edit priority modal as floating overlay if active
+    if st.session_state.get('show_edit_priority_modal', False):
+        from components.modals.edit_priority_modal import edit_priority_modal
+        edit_priority_modal(data_provider, customer)
+    
+    # Header
+    render_header()
+    
+    # Render preview content if in preview mode
+    render_preview_content()
+    
+    # Render main content (tabs or other content)
+    render_main_content(data_provider, customer)
 
 
 if __name__ == "__main__":
