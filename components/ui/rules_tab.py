@@ -106,13 +106,14 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     # Filter for custom rules (customer-specific)
     custom_rules_df = rules_df[rules_df['Customer name'] == customer].copy()
     
+    # Convert Request type column to string and handle NULL values
+    if 'Request type' in custom_rules_df.columns:
+        custom_rules_df['Request type'] = custom_rules_df['Request type'].astype(str).fillna('')
+    
     if not custom_rules_df.empty:
         # Initialize custom selection state
         if 'custom_selected_rules' not in st.session_state:
             st.session_state.custom_selected_rules = []
-        
-        # Add checkbox column for selection
-        custom_rules_df.insert(0, 'Select', [False] * len(custom_rules_df))
         
         # Display custom rules table
         edited_custom_df = st.data_editor(
@@ -120,7 +121,6 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Select": st.column_config.CheckboxColumn("Select", width="small"),
                 "Rule ID": st.column_config.NumberColumn("Rule ID", width="small"),
                 "Customer name": st.column_config.TextColumn("Customer name", width="medium", max_chars=15),
                 "Priority order": st.column_config.NumberColumn("Priority order", width="small"),
@@ -133,13 +133,8 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             key="custom_rules_table"
         )
         
-        # Update selected custom rules immediately
-        selected_custom_rules = []
-        for index, row in edited_custom_df.iterrows():
-            if row.get('Select', False):
-                selected_custom_rules.append(row.to_dict())
-        
-        st.session_state.custom_selected_rules = selected_custom_rules
+        # For now, no selection tracking without checkboxes
+        st.session_state.custom_selected_rules = []
     else:
         st.info("No custom rules found for this customer.")
         st.session_state.custom_selected_rules = []
@@ -151,13 +146,14 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     # Filter for global rules (all customers)
     global_rules_df = rules_df.copy()
     
+    # Convert Request type column to string and handle NULL values
+    if 'Request type' in global_rules_df.columns:
+        global_rules_df['Request type'] = global_rules_df['Request type'].astype(str).fillna('')
+    
     if not global_rules_df.empty:
         # Initialize global selection state
         if 'global_selected_rules' not in st.session_state:
             st.session_state.global_selected_rules = []
-        
-        # Add checkbox column for selection
-        global_rules_df.insert(0, 'Select', [False] * len(global_rules_df))
         
         # Display global rules table
         edited_global_df = st.data_editor(
@@ -165,7 +161,6 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Select": st.column_config.CheckboxColumn("Select", width="small"),
                 "Rule ID": st.column_config.NumberColumn("Rule ID", width="small"),
                 "Customer name": st.column_config.TextColumn("Customer name", width="medium", max_chars=15),
                 "Priority order": st.column_config.NumberColumn("Priority order", width="small"),
@@ -178,13 +173,8 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             key="global_rules_table"
         )
         
-        # Update selected global rules immediately
-        selected_global_rules = []
-        for index, row in edited_global_df.iterrows():
-            if row.get('Select', False):
-                selected_global_rules.append(row.to_dict())
-        
-        st.session_state.global_selected_rules = selected_global_rules
+        # For now, no selection tracking without checkboxes
+        st.session_state.global_selected_rules = []
     else:
         st.info("No global rules found.")
         st.session_state.global_selected_rules = []

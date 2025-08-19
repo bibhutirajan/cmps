@@ -16,7 +16,6 @@ from components.ui.sidebar.main_sidebar import render_main_sidebar
 from components.ui.charges_tab import render_charges_tab
 from components.ui.rules_tab import render_rules_tab
 from components.ui.processed_files_tab import render_processed_files_tab
-from components.ui.regex_rules_tab import render_regex_rules_tab
 
 
 
@@ -32,15 +31,14 @@ class AppConfig:
     DATA_SOURCE: str = os.getenv("DATA_SOURCE", "demo")  # "demo" or "snowflake"
     
     # Snowflake configuration
-    SNOWFLAKE_ENABLED: bool = os.getenv("SNOWFLAKE_ENABLED", "false").lower() == "true"
-    SNOWFLAKE_DATABASE: str = os.getenv("SNOWFLAKE_DATABASE", "arcadia")
-    SNOWFLAKE_SCHEMA: str = os.getenv("SNOWFLAKE_SCHEMA", "lakehouse")
+    SNOWFLAKE_ENABLED: bool = os.getenv("SNOWFLAKE_ENABLED", "true").lower() == "true"
+    SNOWFLAKE_DATABASE: str = os.getenv("SNOWFLAKE_DATABASE", "SANDBOX")
+    SNOWFLAKE_SCHEMA: str = os.getenv("SNOWFLAKE_SCHEMA", "BMANOJKUMAR")
     
     # Table configurations
     CHARGES_TABLE: str = os.getenv("CHARGES_TABLE", "charges")
     RULES_TABLE: str = os.getenv("RULES_TABLE", "rules")
     PROCESSED_FILES_TABLE: str = os.getenv("PROCESSED_FILES_TABLE", "processed_files")
-    REGEX_RULES_TABLE: str = os.getenv("REGEX_RULES_TABLE", "regex_rules")
     
     # UI Configuration
     SIDEBAR_COLLAPSED: bool = True
@@ -196,8 +194,7 @@ def render_navigation_tabs():
     return st.tabs([
         "Charges", 
         "Rules", 
-        "Processed files", 
-        "Regex and rules"
+        "Processed files"
     ])
 
 
@@ -367,12 +364,41 @@ def render_preview_content():
         render_edit_rule_preview()
 
 
+def render_popups(data_provider: DataProvider, customer: str):
+    """Render popups in the main content area"""
+    # Import popup components
+    from components.popups.create_rule_popup import create_rule_popup
+    from components.popups.edit_rule_popup import edit_rule_popup
+    from components.popups.preview_popup import preview_popup
+    from components.popups.edit_preview_popup import edit_preview_popup
+    
+    # Render create rule popup
+    if st.session_state.get('show_create_rule_modal', False):
+        create_rule_popup(data_provider, customer)
+    
+    # Render edit rule popup
+    elif st.session_state.get('show_edit_rule_modal', False):
+        rule_data = st.session_state.get('selected_rule_for_edit', {})
+        edit_rule_popup(data_provider, customer, rule_data)
+    
+    # Render preview popup
+    elif st.session_state.get('show_preview', False):
+        preview_popup(data_provider, customer)
+    
+    # Render edit preview popup
+    elif st.session_state.get('show_edit_preview', False):
+        edit_preview_popup(data_provider, customer)
+
+
 def render_main_content(data_provider: DataProvider, customer: str):
     """Render the main content area with tabs"""
-    # Only show navigation tabs when NOT in preview mode
-    if not (st.session_state.get('show_preview', False) or st.session_state.get('show_edit_preview', False)):
+    # Only show navigation tabs when NOT in popup mode
+    if not (st.session_state.get('show_preview', False) or 
+            st.session_state.get('show_edit_preview', False) or
+            st.session_state.get('show_create_rule_modal', False) or
+            st.session_state.get('show_edit_rule_modal', False)):
         # Navigation tabs with descriptive names
-        charges_tab, rules_tab, processed_files_tab, regex_rules_tab = render_navigation_tabs()
+        charges_tab, rules_tab, processed_files_tab = render_navigation_tabs()
         
         # Render tabs with clear, descriptive variable names
         with charges_tab:
@@ -383,9 +409,6 @@ def render_main_content(data_provider: DataProvider, customer: str):
         
         with processed_files_tab:
             render_processed_files_tab(data_provider, customer)
-        
-        with regex_rules_tab:
-            render_regex_rules_tab(data_provider, customer)
 
 
 # =============================================================================
@@ -402,10 +425,6 @@ def main():
     # Get data provider
     data_provider = get_data_provider(config.SNOWFLAKE_ENABLED)
     
-    # Check if modal should be shown and handle sidebar expansion
-    if st.session_state.get('show_create_rule_modal', False) or st.session_state.get('show_edit_rule_modal', False):
-        render_sidebar_expansion_css()
-    
     # Render sidebar and get selected customer
     customer = render_main_sidebar(data_provider)
     
@@ -416,6 +435,9 @@ def main():
     
     # Header
     render_header()
+    
+    # Render popups in main content area
+    render_popups(data_provider, customer)
     
     # Render preview content if in preview mode
     render_preview_content()

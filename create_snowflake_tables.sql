@@ -1,0 +1,75 @@
+-- Snowflake Table Creation Script for Charge Mapping Application
+-- Database: arcadia
+-- Schema: lakehouse
+
+-- Create CHARGES table
+CREATE OR REPLACE TABLE arcadia.lakehouse.charges (
+    STATEMENT_ID VARCHAR(255),
+    PROVIDER_NAME VARCHAR(100),
+    ACCOUNT_NUMBER VARCHAR(50),
+    CHARGE_NAME VARCHAR(255),
+    CHARGE_ID VARCHAR(100),
+    CHARGE_MEASUREMENT VARCHAR(100),
+    USAGE_UNIT VARCHAR(50),
+    SERVICE_TYPE VARCHAR(50),
+    CUSTOMER_NAME VARCHAR(100),
+    CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    UPDATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
+
+-- Create RULES table
+CREATE OR REPLACE TABLE arcadia.lakehouse.rules (
+    CHIPS_BUSINESS_RULE_ID VARCHAR(50),
+    CUSTOMER_NAME VARCHAR(100),
+    PRIORITY_ORDER NUMBER(10,2),
+    CHARGE_NAME_MAPPING VARCHAR(500),
+    CHARGE_ID VARCHAR(100),
+    CHARGE_GROUP_HEADING VARCHAR(255),
+    CHARGE_CATEGORY VARCHAR(100),
+    REQUEST_TYPE VARCHAR(50),
+    PROVIDER_NAME VARCHAR(100),
+    ACCOUNT_NUMBER VARCHAR(50),
+    USAGE_UNIT VARCHAR(50),
+    SERVICE_TYPE VARCHAR(50),
+    TARIFF VARCHAR(255),
+    RAW_CHARGE_NAME VARCHAR(255),
+    LEGACY_DESCRIPTION TEXT,
+    METER_NUMBER VARCHAR(50),
+    MEASUREMENT_TYPE VARCHAR(100),
+    CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    UPDATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
+
+-- Create PROCESSED_FILES table
+CREATE OR REPLACE TABLE arcadia.lakehouse.processed_files (
+    FILE_ID VARCHAR(50),
+    FILENAME VARCHAR(255),
+    PROCESSED_DATE DATE,
+    STATUS VARCHAR(50),
+    RECORDS NUMBER(10),
+    CUSTOMER_NAME VARCHAR(100),
+    CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    UPDATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
+
+
+
+-- Create indexes for better performance
+CREATE OR REPLACE INDEX idx_charges_customer ON arcadia.lakehouse.charges(CUSTOMER_NAME);
+CREATE OR REPLACE INDEX idx_charges_provider ON arcadia.lakehouse.charges(PROVIDER_NAME);
+CREATE OR REPLACE INDEX idx_charges_charge_name ON arcadia.lakehouse.charges(CHARGE_NAME);
+
+CREATE OR REPLACE INDEX idx_rules_customer ON arcadia.lakehouse.rules(CUSTOMER_NAME);
+CREATE OR REPLACE INDEX idx_rules_priority ON arcadia.lakehouse.rules(PRIORITY_ORDER);
+CREATE OR REPLACE INDEX idx_rules_rule_id ON arcadia.lakehouse.rules(CHIPS_BUSINESS_RULE_ID);
+
+CREATE OR REPLACE INDEX idx_processed_files_customer ON arcadia.lakehouse.processed_files(CUSTOMER_NAME);
+CREATE OR REPLACE INDEX idx_processed_files_date ON arcadia.lakehouse.processed_files(PROCESSED_DATE);
+
+
+
+-- Grant permissions (adjust as needed for your Snowflake setup)
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON arcadia.lakehouse.charges TO ROLE your_role;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON arcadia.lakehouse.rules TO ROLE your_role;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON arcadia.lakehouse.processed_files TO ROLE your_role;
+

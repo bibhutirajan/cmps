@@ -34,7 +34,6 @@ class DeploymentConfig:
             "CHARGES_TABLE": "charges",
             "RULES_TABLE": "rules",
             "PROCESSED_FILES_TABLE": "processed_files",
-            "REGEX_RULES_TABLE": "regex_rules",
             "SIDEBAR_COLLAPSED": "true",
             "DARK_THEME": "true"
         }
@@ -50,7 +49,6 @@ class DeploymentConfig:
             "CHARGES_TABLE": "charges",
             "RULES_TABLE": "rules",
             "PROCESSED_FILES_TABLE": "processed_files",
-            "REGEX_RULES_TABLE": "regex_rules",
             "SIDEBAR_COLLAPSED": "true",
             "DARK_THEME": "true"
         }

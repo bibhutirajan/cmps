@@ -29,10 +29,7 @@ class DataProvider(ABC):
         """Get processed files data"""
         pass
     
-    @abstractmethod
-    def get_regex_rules(self, customer: str) -> pd.DataFrame:
-        """Get regex rules data"""
-        pass
+
     
     @abstractmethod
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
@@ -89,14 +86,7 @@ class DemoDataProvider(DataProvider):
             'Records': [150, 200, 175, 125, 300]
         })
     
-    def get_regex_rules(self, customer: str) -> pd.DataFrame:
-        """Get demo regex rules data"""
-        return pd.DataFrame({
-            'Pattern ID': [f'PATTERN_{i:03d}' for i in range(1, 6)],
-            'Regex Pattern': [r'CHP.*Rider', r'Gas.*Service', r'Water.*Bill', r'Electric.*Charge', r'Service.*Fee'],
-            'Category': ['Electricity', 'Gas', 'Water', 'Electricity', 'Other'],
-            'Priority': [1, 2, 3, 4, 5]
-        })
+
     
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
         """Demo rule creation"""
@@ -117,7 +107,7 @@ class DemoDataProvider(DataProvider):
 class SnowflakeDataProvider(DataProvider):
     """Snowflake data provider for production"""
     
-    def __init__(self, session, database: str = "arcadia", schema: str = "lakehouse"):
+    def __init__(self, session, database: str = "SANDBOX", schema: str = "BMANOJKUMAR"):
         self.session = session
         self.database = database
         self.schema = schema
@@ -135,11 +125,11 @@ class SnowflakeDataProvider(DataProvider):
                 CHARGE_MEASUREMENT as "Charge measurement",
                 USAGE_UNIT as "Usage unit",
                 SERVICE_TYPE as "Service type"
-            FROM {self.database}.{self.schema}.charges
+            FROM {self.database}.{self.schema}.CHARGES
             WHERE CUSTOMER_NAME = '{customer}'
             """
-            if charge_type:
-                query += f" AND CHARGE_TYPE = '{charge_type}'"
+            # Note: CHARGE_TYPE column doesn't exist in the CHARGES table
+            # Filtering by charge_type is disabled for now
             
             return self.session.sql(query).to_pandas()
         except Exception as e:
@@ -159,11 +149,12 @@ class SnowflakeDataProvider(DataProvider):
                 CHARGE_GROUP_HEADING as "Charge group heading",
                 CHARGE_CATEGORY as "Charge category",
                 REQUEST_TYPE as "Request type"
-            FROM {self.database}.{self.schema}.rules
+            FROM {self.database}.{self.schema}.RULES
             WHERE CUSTOMER_NAME = '{customer}'
             ORDER BY PRIORITY_ORDER
             """
-            return self.session.sql(query).to_pandas()
+            df = self.session.sql(query).to_pandas()
+            return df
         except Exception as e:
             st.error(f"Error fetching rules data: {str(e)}")
             return pd.DataFrame()
@@ -178,7 +169,7 @@ class SnowflakeDataProvider(DataProvider):
                 PROCESSED_DATE as "Processed Date",
                 STATUS as "Status",
                 RECORDS as "Records"
-            FROM {self.database}.{self.schema}.processed_files
+            FROM {self.database}.{self.schema}.PROCESSED_FILES
             WHERE CUSTOMER_NAME = '{customer}'
             ORDER BY PROCESSED_DATE DESC
             """
@@ -187,23 +178,7 @@ class SnowflakeDataProvider(DataProvider):
             st.error(f"Error fetching processed files data: {str(e)}")
             return pd.DataFrame()
     
-    def get_regex_rules(self, customer: str) -> pd.DataFrame:
-        """Get regex rules data from Snowflake"""
-        try:
-            query = f"""
-            SELECT 
-                PATTERN_ID as "Pattern ID",
-                REGEX_PATTERN as "Regex Pattern",
-                CATEGORY as "Category",
-                PRIORITY as "Priority"
-            FROM {self.database}.{self.schema}.regex_rules
-            WHERE CUSTOMER_NAME = '{customer}'
-            ORDER BY PRIORITY
-            """
-            return self.session.sql(query).to_pandas()
-        except Exception as e:
-            st.error(f"Error fetching regex rules data: {str(e)}")
-            return pd.DataFrame()
+
     
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
         """Create a new rule in Snowflake"""

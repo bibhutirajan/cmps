@@ -40,20 +40,29 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     # Get charges data
     charges_df = data_provider.get_charges(customer, charge_type)
     
+    # Convert numeric columns to string to avoid type compatibility issues
+    if not charges_df.empty:
+        if 'Account number' in charges_df.columns:
+            charges_df['Account number'] = charges_df['Account number'].astype(str)
+        if 'Statement ID' in charges_df.columns:
+            charges_df['Statement ID'] = charges_df['Statement ID'].astype(str)
+        if 'Service type' in charges_df.columns:
+            charges_df['Service type'] = charges_df['Service type'].astype(str).fillna('')
+        if 'Usage unit' in charges_df.columns:
+            charges_df['Usage unit'] = charges_df['Usage unit'].astype(str).fillna('')
+        if 'Charge measurement' in charges_df.columns:
+            charges_df['Charge measurement'] = charges_df['Charge measurement'].astype(str).fillna('')
+    
     # Initialize session state for selected rows
     if 'selected_rows' not in st.session_state:
         st.session_state.selected_rows = set()
     
-    # Add checkbox column
-    charges_df.insert(0, 'Select', [False] * len(charges_df))
-    
-    # Display the table with editable checkboxes
+    # Display the table without checkbox column for now
     edited_df = st.data_editor(
         charges_df,
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Select": st.column_config.CheckboxColumn("Select", default=False),
             "Statement ID": st.column_config.TextColumn("Statement ID", width="medium"),
             "Provider name": st.column_config.TextColumn("Provider name", width="medium"),
             "Account number": st.column_config.TextColumn("Account number", width="medium"),

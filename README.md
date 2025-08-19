@@ -24,8 +24,7 @@ cmps/
 │   │   ├── sidebar.py             # Sidebar component
 │   │   ├── charges_tab.py         # Charges tab
 │   │   ├── rules_tab.py           # Rules tab
-│   │   ├── processed_files_tab.py # Processed files tab
-│   │   └── regex_rules_tab.py     # Regex rules tab
+│   │   └── processed_files_tab.py # Processed files tab
 │   └── modals/                    # Modal components
 │       ├── __init__.py
 │       ├── create_rule_modal.py   # Create rule modal
@@ -140,7 +139,7 @@ export DATA_SOURCE=snowflake
 | `CHARGES_TABLE` | `charges` | Charges table name |
 | `RULES_TABLE` | `rules` | Rules table name |
 | `PROCESSED_FILES_TABLE` | `processed_files` | Processed files table name |
-| `REGEX_RULES_TABLE` | `regex_rules` | Regex rules table name |
+
 
 ### Snowflake Configuration
 
@@ -248,17 +247,7 @@ CREATE TABLE processed_files (
     RECORDS NUMBER,
     CUSTOMER_NAME VARCHAR
 );
-```
 
-#### Regex Rules Table
-```sql
-CREATE TABLE regex_rules (
-    PATTERN_ID VARCHAR,
-    REGEX_PATTERN VARCHAR,
-    CATEGORY VARCHAR,
-    PRIORITY NUMBER,
-    CUSTOMER_NAME VARCHAR
-);
 ```
 
 ## 🔄 Migration Strategy
