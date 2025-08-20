@@ -7,10 +7,10 @@ This module contains the main sidebar function that orchestrates all sidebar com
 import streamlit as st
 from components.data.providers import DataProvider
 from .app_sidebar import render_app_sidebar
-from components.popups.create_rule_popup import create_rule_popup
-from components.popups.edit_rule_popup import edit_rule_popup
-from components.popups.preview_popup import preview_popup
-from components.popups.edit_preview_popup import edit_preview_popup
+from components.popups.create_rule_popup import render_create_rule_popup
+from components.popups.edit_rule_popup import render_edit_rule_popup
+from components.popups.preview_popup import render_preview_popup
+from components.popups.edit_preview_popup import render_edit_preview_popup
 
 
 def render_main_sidebar(data_provider: DataProvider) -> str:

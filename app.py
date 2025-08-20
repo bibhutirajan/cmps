@@ -365,50 +365,43 @@ def render_preview_content():
 
 
 def render_popups(data_provider: DataProvider, customer: str):
-    """Render popups in the main content area"""
+    """Render popups in the main content area using st.popover"""
     # Import popup components
-    from components.popups.create_rule_popup import create_rule_popup
-    from components.popups.edit_rule_popup import edit_rule_popup
-    from components.popups.preview_popup import preview_popup
-    from components.popups.edit_preview_popup import edit_preview_popup
+    from components.popups.create_rule_popup import render_create_rule_popup
+    from components.popups.edit_rule_popup import render_edit_rule_popup
+    from components.popups.preview_popup import render_preview_popup
+    from components.popups.edit_preview_popup import render_edit_preview_popup
     
     # Render create rule popup
-    if st.session_state.get('show_create_rule_modal', False):
-        create_rule_popup(data_provider, customer)
+    render_create_rule_popup(data_provider, customer)
     
     # Render edit rule popup
-    elif st.session_state.get('show_edit_rule_modal', False):
-        rule_data = st.session_state.get('selected_rule_for_edit', {})
-        edit_rule_popup(data_provider, customer, rule_data)
+    rule_data = st.session_state.get('selected_rule_for_edit', {})
+    render_edit_rule_popup(data_provider, customer, rule_data)
     
     # Render preview popup
-    elif st.session_state.get('show_preview', False):
-        preview_popup(data_provider, customer)
+    if st.session_state.get('show_preview_popup', False):
+        render_preview_popup(data_provider, customer)
     
     # Render edit preview popup
-    elif st.session_state.get('show_edit_preview', False):
-        edit_preview_popup(data_provider, customer)
+    if st.session_state.get('show_edit_preview_popup', False):
+        render_edit_preview_popup(data_provider, customer)
 
 
 def render_main_content(data_provider: DataProvider, customer: str):
     """Render the main content area with tabs"""
-    # Only show navigation tabs when NOT in popup mode
-    if not (st.session_state.get('show_preview', False) or 
-            st.session_state.get('show_edit_preview', False) or
-            st.session_state.get('show_create_rule_modal', False) or
-            st.session_state.get('show_edit_rule_modal', False)):
-        # Navigation tabs with descriptive names
-        charges_tab, rules_tab, processed_files_tab = render_navigation_tabs()
-        
-        # Render tabs with clear, descriptive variable names
-        with charges_tab:
-            render_charges_tab(data_provider, customer)
-        
-        with rules_tab:
-            render_rules_tab(data_provider, customer)
-        
-        with processed_files_tab:
-            render_processed_files_tab(data_provider, customer)
+    # Navigation tabs with descriptive names
+    charges_tab, rules_tab, processed_files_tab = render_navigation_tabs()
+    
+    # Render tabs with clear, descriptive variable names
+    with charges_tab:
+        render_charges_tab(data_provider, customer)
+    
+    with rules_tab:
+        render_rules_tab(data_provider, customer)
+    
+    with processed_files_tab:
+        render_processed_files_tab(data_provider, customer)
 
 
 # =============================================================================

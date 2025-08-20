@@ -1,30 +1,31 @@
 """
-Create Rule Popup Component
+Edit Rule Popup Component
 
-This module contains the create rule popup using Streamlit's native st.popover.
+This module contains the edit rule popup using Streamlit's native st.popover.
 """
 
 import streamlit as st
 from components.data.providers import DataProvider
 
 
-def render_create_rule_popup(data_provider: DataProvider, customer: str):
+def render_edit_rule_popup(data_provider: DataProvider, customer: str, rule_data: dict = None):
     """
-    Render the create rule popup using st.popover
+    Render the edit rule popup using st.popover
     
     Args:
         data_provider: The data provider instance
         customer: The selected customer name
+        rule_data: The rule data to pre-populate the form
     """
     # Only render if popup is triggered
-    if not st.session_state.get('show_create_rule_popup', False):
+    if not st.session_state.get('show_edit_rule_popup', False):
         return
     
     # Create a centered container for the popup
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         # Use st.popover for native Streamlit popup
-        with st.popover("➕ Create Rule", help="Create a new rule", use_container_width=True):
+        with st.popover("✏️ Edit Rule", help="Edit existing rule", use_container_width=True):
             
             # If charge matches criteria section
             st.markdown("### If charge matches criteria...")
@@ -33,8 +34,8 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
             provider = st.selectbox(
                 "Provider",
                 ["Atmos", "Other Provider", "Test Provider"],
-                index=0,
-                key="popup_rule_provider"
+                index=0 if not rule_data else ["Atmos", "Other Provider", "Test Provider"].index(rule_data.get("provider", "Atmos")),
+                key="popup_edit_rule_provider"
             )
             
             # Charge name with condition dropdown - exactly like sidebar
@@ -43,17 +44,18 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                 charge_name_condition = st.selectbox(
                     "Condition",
                     ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                    key="popup_charge_name_condition"
+                    index=0 if not rule_data else ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"].index(rule_data.get("charge_name_condition", "Exactly matches")),
+                    key="popup_edit_charge_name_condition"
                 )
             with col2:
                 charge_name = st.text_input(
                     "Charge name",
-                    value="CHP rider",
-                    key="popup_rule_charge_name"
+                    value=rule_data.get("charge_name", "CHP rider") if rule_data else "CHP rider",
+                    key="popup_edit_rule_charge_name"
                 )
             
             # Advanced conditions toggle
-            advanced_enabled = st.toggle("Advanced conditions", value=True, key="popup_advanced_conditions")
+            advanced_enabled = st.toggle("Advanced conditions", value=rule_data.get("advanced_enabled", True) if rule_data else True, key="popup_edit_advanced_conditions")
             
             if advanced_enabled:
                 # Account number - exactly like sidebar
@@ -62,13 +64,14 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                     account_condition = st.selectbox(
                         "Condition",
                         ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                        key="popup_account_condition"
+                        index=0 if not rule_data else ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"].index(rule_data.get("account_condition", "Exactly matches")),
+                        key="popup_edit_account_condition"
                     )
                 with col2:
                     account_number = st.text_input(
                         "Account number",
-                        value="00000000",
-                        key="popup_rule_account_number"
+                        value=rule_data.get("account_number", "00000000") if rule_data else "00000000",
+                        key="popup_edit_rule_account_number"
                     )
                 
                 # Usage unit - exactly like sidebar
@@ -77,14 +80,15 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                     usage_unit_condition = st.selectbox(
                         "Condition",
                         ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                        key="popup_usage_unit_condition"
+                        index=0 if not rule_data else ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"].index(rule_data.get("usage_unit_condition", "Exactly matches")),
+                        key="popup_edit_usage_unit_condition"
                     )
                 with col2:
                     usage_unit = st.selectbox(
                         "Usage unit",
                         ["kWh", "therms", "gallons", "cubic feet"],
-                        index=0,
-                        key="popup_rule_usage_unit"
+                        index=0 if not rule_data else ["kWh", "therms", "gallons", "cubic feet"].index(rule_data.get("usage_unit", "kWh")),
+                        key="popup_edit_rule_usage_unit"
                     )
                 
                 # Service type - exactly like sidebar
@@ -93,14 +97,15 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                     service_type_condition = st.selectbox(
                         "Condition",
                         ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"],
-                        key="popup_service_type_condition"
+                        index=0 if not rule_data else ["Exactly matches", "Contains", "Starts with", "Ends with", "Regex"].index(rule_data.get("service_type_condition", "Exactly matches")),
+                        key="popup_edit_service_type_condition"
                     )
                 with col2:
                     service_type = st.selectbox(
                         "Service type",
                         ["Electric", "Gas", "Water", "Other"],
-                        index=0,
-                        key="popup_rule_service_type"
+                        index=0 if not rule_data else ["Electric", "Gas", "Water", "Other"].index(rule_data.get("service_type", "Electric")),
+                        key="popup_edit_rule_service_type"
                     )
             
             st.markdown("---")
@@ -115,8 +120,8 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
             with col2:
                 charge_name_mapping = st.text_input(
                     "New charge name",
-                    value="CHP Rider Charge",
-                    key="popup_rule_charge_name_mapping"
+                    value=rule_data.get("charge_name_mapping", "CHP Rider Charge") if rule_data else "CHP Rider Charge",
+                    key="popup_edit_rule_charge_name_mapping"
                 )
             
             # Charge category - exactly like sidebar
@@ -127,8 +132,8 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                 charge_category = st.selectbox(
                     "Category",
                     ["Energy", "Delivery", "Taxes", "Fees", "Other"],
-                    index=0,
-                    key="popup_rule_charge_category"
+                    index=0 if not rule_data else ["Energy", "Delivery", "Taxes", "Fees", "Other"].index(rule_data.get("charge_category", "Energy")),
+                    key="popup_edit_rule_charge_category"
                 )
             
             # Charge group heading - exactly like sidebar
@@ -138,8 +143,8 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
             with col2:
                 charge_group_heading = st.text_input(
                     "Group heading",
-                    value="Energy Charges",
-                    key="popup_rule_charge_group_heading"
+                    value=rule_data.get("charge_group_heading", "Energy Charges") if rule_data else "Energy Charges",
+                    key="popup_edit_rule_charge_group_heading"
                 )
             
             # Request type - exactly like sidebar
@@ -150,7 +155,8 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                 request_type = st.selectbox(
                     "Request type",
                     ["Standard", "Priority", "Emergency"],
-                    key="popup_rule_request_type"
+                    index=0 if not rule_data else ["Standard", "Priority", "Emergency"].index(rule_data.get("request_type", "Standard")),
+                    key="popup_edit_rule_request_type"
                 )
             
             st.markdown("---")
@@ -158,11 +164,11 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
             # Action buttons
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
-                if st.button("Cancel", key="popup_cancel_create"):
-                    st.session_state.show_create_rule_popup = False
+                if st.button("Cancel", key="popup_cancel_edit"):
+                    st.session_state.show_edit_rule_popup = False
                     st.rerun()
             with col2:
-                if st.button("Preview", key="popup_preview_create"):
+                if st.button("Preview", key="popup_preview_edit"):
                     # Store form data in session state for preview
                     st.session_state.preview_rule_data = {
                         "provider": provider,
@@ -181,11 +187,11 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                         "request_type": request_type,
                         "customer": customer
                     }
-                    st.session_state.show_preview_popup = True
+                    st.session_state.show_edit_preview_popup = True
                     st.rerun()
             with col3:
-                if st.button("Create", type="primary", key="popup_create_rule"):
-                    # Here you would typically save the rule to the database
-                    st.success("Rule created successfully!")
-                    st.session_state.show_create_rule_popup = False
+                if st.button("Update", type="primary", key="popup_update_rule"):
+                    # Here you would typically update the rule in the database
+                    st.success("Rule updated successfully!")
+                    st.session_state.show_edit_rule_popup = False
                     st.rerun()

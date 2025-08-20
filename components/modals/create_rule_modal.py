@@ -327,31 +327,8 @@ def render_create_rule_button(data_provider: DataProvider, context: Dict[str, An
     
     # Check if button is clicked
     if st.button("Create rule", key=button_key, type="primary"):
-        # Check if edit rule modal was active and set flag for warning
-        if st.session_state.get('show_edit_rule_modal', False):
-            # Clear edit rule session state
-            st.session_state.show_edit_rule_modal = False
-            st.session_state.show_edit_preview = False
-            st.session_state.selected_rule_for_edit = None
-            st.session_state.edit_rule_form_data = None
-            # Set flag to show warning in sidebar
-            st.session_state._switched_from_edit_to_create = True
-        
-        # Store customer in session state for modal use
+        # Store customer in session state for popup use
         st.session_state.selected_customer = customer
-        # Show modal and force sidebar expansion
-        st.session_state.show_create_rule_modal = True
-        # Add CSS to immediately expand sidebar
-        st.markdown("""
-        <style>
-        /* Immediately expand sidebar when modal is triggered */
-        [data-testid="stSidebar"] {
-            width: 500px !important;
-            min-width: 500px !important;
-            max-width: 500px !important;
-            transform: translateX(0) !important;
-            transition: transform 0.3s ease !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        # Trigger popup by setting flag
+        st.session_state.show_create_rule_popup = True
         st.rerun() 

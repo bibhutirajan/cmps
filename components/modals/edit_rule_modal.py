@@ -459,18 +459,9 @@ def render_edit_rule_button(data_provider: DataProvider, context: Dict[str, Any]
             st.warning("Please select at least one rule to edit")
             return
         
-        # Check if create rule modal was active and set flag for warning
-        if st.session_state.get('show_create_rule_modal', False):
-            # Clear create rule session state
-            st.session_state.show_create_rule_modal = False
-            st.session_state.show_preview = False
-            st.session_state.rule_form_data = None
-            # Set flag to show warning in sidebar
-            st.session_state._switched_from_create_to_edit = True
-        
-        # Store customer and selected rule data in session state for sidebar form
+        # Store customer and selected rule data in session state for popup
         st.session_state.selected_customer = customer
         st.session_state.selected_rule_for_edit = selected_rules[0]  # Use first selected rule
-        # Show sidebar form
-        st.session_state.show_edit_rule_modal = True
+        # Trigger popup by setting flag
+        st.session_state.show_edit_rule_popup = True
         st.rerun() 
