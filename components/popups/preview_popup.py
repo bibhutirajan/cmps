@@ -71,7 +71,8 @@ def render_preview_popup(data_provider: DataProvider, customer: str):
                     st.rerun()
             with col2:
                 if st.button("Create Rule", type="primary", key="preview_create_rule"):
-                    # Here you would typically save the rule to the database
-                    st.success("Rule created successfully!")
-                    st.session_state.show_preview_popup = False
-                    st.rerun()
+                    # Save the rule to the database
+                    if data_provider.create_rule(rule_data):
+                        st.session_state.show_preview_popup = False
+                        st.session_state.show_create_rule_popup = False
+                        st.rerun()

@@ -405,18 +405,41 @@ app.py
 - [ ] Set environment variables (optional)
 - [ ] Run: `streamlit run app.py`
 
-### Snowflake Native App
-- [ ] Configure Snowflake environment variables
-- [ ] Create required tables in Snowflake
-- [ ] Test connection and data access
-- [ ] Deploy using Snowflake Native Apps framework
+### Local Development with Snowflake (External Browser Auth)
+- [ ] Copy example config: `cp example_config.toml ~/.snowflake/config.toml`
+- [ ] Edit config with your credentials
+- [ ] Run: `streamlit run app.py`
 
-### External Hosting
-- [ ] Set up hosting platform (Heroku, AWS, etc.)
-- [ ] Configure environment variables
-- [ ] Set up Snowflake connection
-- [ ] Deploy application
-- [ ] Test functionality
+### Sandbox Deployment
+- [ ] Ensure connected to SANDBOX database
+- [ ] Run: `./bin/local_deploy.sh`
+- [ ] Access app in Snowflake
+
+### Production Deployment (Automated)
+- [ ] Push to main branch triggers GitHub Actions
+- [ ] Automated deployment to `APPLICATIONS.CMPS.*`
+- [ ] Access via: `https://eda55635.us-east-1.snowflakeapp.com/applications/cmps/cmps`
+
+## 🏗️ Snowflake Deployment Architecture
+
+### Local Development
+- **Authentication**: External Browser Authentication
+- **Database**: `SANDBOX.BMANOJKUMAR.*`
+- **Configuration**: `~/.snowflake/config.toml`
+
+### Production Deployment
+- **Authentication**: RSA Private Key (from AWS Parameter Store)
+- **Database**: `APPLICATIONS.CMPS.*`
+- **Configuration**: Automated via GitHub Actions
+- **URL**: `https://eda55635.us-east-1.snowflakeapp.com/applications/cmps/cmps`
+
+### Database Schema
+The application uses the following tables:
+- `CHARGES` - Charge mapping data
+- `RULES` - Business rules configuration
+- `PROCESSED_FILES` - File processing tracking
+
+Both sandbox (`SANDBOX.BMANOJKUMAR.*`) and production (`APPLICATIONS.CMPS.*`) schemas are supported.
 
 ## 🐛 Troubleshooting
 

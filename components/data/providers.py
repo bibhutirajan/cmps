@@ -183,19 +183,104 @@ class SnowflakeDataProvider(DataProvider):
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
         """Create a new rule in Snowflake"""
         try:
-            # Implementation for creating rules in Snowflake
-            st.success("🎉 Rule created successfully in Snowflake!")
+            # Get the next available rule ID
+            max_id_query = f"""
+            SELECT COALESCE(MAX(CHIPS_BUSINESS_RULE_ID), 0) + 1 as NEXT_ID
+            FROM {self.database}.{self.schema}.RULES
+            """
+            max_id_result = self.session.sql(max_id_query).to_pandas()
+            next_rule_id = max_id_result.iloc[0]['NEXT_ID']
+            
+            # Get the next available priority order
+            max_priority_query = f"""
+            SELECT COALESCE(MAX(PRIORITY_ORDER), 0) + 1 as NEXT_PRIORITY
+            FROM {self.database}.{self.schema}.RULES
+            WHERE CUSTOMER_NAME = '{rule_data.get('customer', '')}'
+            """
+            max_priority_result = self.session.sql(max_priority_query).to_pandas()
+            next_priority = max_priority_result.iloc[0]['NEXT_PRIORITY']
+            
+            # Build the INSERT query - using only columns that exist in the RULES table
+            # Convert request_type to numeric if it's a string
+            request_type_value = rule_data.get('request_type', '')
+            if request_type_value == 'Standard':
+                request_type_value = 1
+            elif request_type_value == 'Express':
+                request_type_value = 2
+            elif request_type_value == 'Priority':
+                request_type_value = 3
+            else:
+                request_type_value = 1  # Default to Standard
+            
+            insert_query = f"""
+            INSERT INTO {self.database}.{self.schema}.RULES (
+                CHIPS_BUSINESS_RULE_ID,
+                CUSTOMER_NAME,
+                PRIORITY_ORDER,
+                CHARGE_NAME_MAPPING,
+                CHARGE_ID,
+                CHARGE_GROUP_HEADING,
+                CHARGE_CATEGORY,
+                REQUEST_TYPE
+            ) VALUES (
+                {next_rule_id},
+                '{rule_data.get('customer', '')}',
+                {next_priority},
+                '{rule_data.get('charge_name_mapping', '')}',
+                'NewBatch',
+                '{rule_data.get('charge_group_heading', '')}',
+                '{rule_data.get('charge_category', '')}',
+                {request_type_value}
+            )
+            """
+            
+            # Execute the INSERT
+            self.session.sql(insert_query).collect()
+            st.success(f"🎉 Rule {next_rule_id} created successfully in Snowflake!")
             return True
+            
         except Exception as e:
             st.error(f"Error creating rule: {str(e)}")
+            # Add debugging information
+            st.error(f"Debug info - Next Rule ID: {next_rule_id}, Next Priority: {next_priority}")
+            st.error(f"Debug info - Customer: {rule_data.get('customer', '')}")
             return False
     
     def update_rule(self, rule_id: str, rule_data: Dict[str, Any]) -> bool:
         """Update an existing rule in Snowflake"""
         try:
-            # Implementation for updating rules in Snowflake
-            st.success(f"🎉 Rule {rule_id} updated successfully in Snowflake!")
-            return True
+            # Build the UPDATE query - using only columns that exist in the RULES table
+            # Convert request_type to numeric if it's a string
+            request_type_value = rule_data.get('request_type', '')
+            if request_type_value == 'Standard':
+                request_type_value = 1
+            elif request_type_value == 'Express':
+                request_type_value = 2
+            elif request_type_value == 'Priority':
+                request_type_value = 3
+            else:
+                request_type_value = 1  # Default to Standard
+            
+            update_query = f"""
+            UPDATE {self.database}.{self.schema}.RULES
+            SET 
+                CHARGE_NAME_MAPPING = '{rule_data.get('charge_name_mapping', '')}',
+                CHARGE_CATEGORY = '{rule_data.get('charge_category', '')}',
+                CHARGE_GROUP_HEADING = '{rule_data.get('charge_group_heading', '')}',
+                REQUEST_TYPE = {request_type_value}
+            WHERE CHIPS_BUSINESS_RULE_ID = {rule_id}
+            """
+            
+            # Execute the UPDATE
+            result = self.session.sql(update_query).collect()
+            
+            if result:
+                st.success(f"🎉 Rule {rule_id} updated successfully in Snowflake!")
+                return True
+            else:
+                st.error(f"Rule {rule_id} not found or no changes made")
+                return False
+                
         except Exception as e:
             st.error(f"Error updating rule: {str(e)}")
             return False

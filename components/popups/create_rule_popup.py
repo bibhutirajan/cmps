@@ -185,7 +185,23 @@ def render_create_rule_popup(data_provider: DataProvider, customer: str):
                     st.rerun()
             with col3:
                 if st.button("Create", type="primary", key="popup_create_rule"):
-                    # Here you would typically save the rule to the database
-                    st.success("Rule created successfully!")
-                    st.session_state.show_create_rule_popup = False
+                    # Store form data in session state for preview (same as Preview button)
+                    st.session_state.preview_rule_data = {
+                        "provider": provider,
+                        "charge_name_condition": charge_name_condition,
+                        "charge_name": charge_name,
+                        "advanced_enabled": advanced_enabled,
+                        "account_condition": account_condition if advanced_enabled else None,
+                        "account_number": account_number if advanced_enabled else None,
+                        "usage_unit_condition": usage_unit_condition if advanced_enabled else None,
+                        "usage_unit": usage_unit if advanced_enabled else None,
+                        "service_type_condition": service_type_condition if advanced_enabled else None,
+                        "service_type": service_type if advanced_enabled else None,
+                        "charge_name_mapping": charge_name_mapping,
+                        "charge_category": charge_category,
+                        "charge_group_heading": charge_group_heading,
+                        "request_type": request_type,
+                        "customer": customer
+                    }
+                    st.session_state.show_preview_popup = True
                     st.rerun()

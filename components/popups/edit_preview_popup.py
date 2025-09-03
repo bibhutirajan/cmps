@@ -71,7 +71,11 @@ def render_edit_preview_popup(data_provider: DataProvider, customer: str):
                     st.rerun()
             with col2:
                 if st.button("Update Rule", type="primary", key="edit_preview_update_rule"):
-                    # Here you would typically update the rule in the database
-                    st.success("Rule updated successfully!")
-                    st.session_state.show_edit_preview_popup = False
-                    st.rerun()
+                    # Get the rule ID from session state
+                    rule_id = st.session_state.get('selected_rule_for_edit', {}).get('Rule ID', '')
+                    
+                    # Update the rule in the database
+                    if data_provider.update_rule(rule_id, rule_data):
+                        st.session_state.show_edit_preview_popup = False
+                        st.session_state.show_edit_rule_popup = False
+                        st.rerun()

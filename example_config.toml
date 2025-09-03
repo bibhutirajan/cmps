@@ -1,0 +1,9 @@
+[connections.default]
+account = "eda55635.us-east-1"
+user = "your_username"
+authenticator = "externalbrowser"
+database = "SANDBOX"
+schema = "BMANOJKUMAR"
+role = "your_role"
+warehouse = "your_warehouse"
+

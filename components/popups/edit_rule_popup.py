@@ -191,7 +191,28 @@ def render_edit_rule_popup(data_provider: DataProvider, customer: str, rule_data
                     st.rerun()
             with col3:
                 if st.button("Update", type="primary", key="popup_update_rule"):
-                    # Here you would typically update the rule in the database
-                    st.success("Rule updated successfully!")
-                    st.session_state.show_edit_rule_popup = False
+                    # Get the rule ID from session state
+                    rule_id = st.session_state.get('selected_rule_for_edit', {}).get('Rule ID', '')
+                    
+                    # Store form data in session state for preview (same as Preview button)
+                    st.session_state.preview_rule_data = {
+                        "provider": provider,
+                        "charge_name_condition": charge_name_condition,
+                        "charge_name": charge_name,
+                        "advanced_enabled": advanced_enabled,
+                        "account_condition": account_condition if advanced_enabled else None,
+                        "account_number": account_number if advanced_enabled else None,
+                        "usage_unit_condition": usage_unit_condition if advanced_enabled else None,
+                        "usage_unit": usage_unit if advanced_enabled else None,
+                        "service_type_condition": service_type_condition if advanced_enabled else None,
+                        "service_type": service_type if advanced_enabled else None,
+                        "charge_name_mapping": charge_name_mapping,
+                        "charge_category": charge_category,
+                        "charge_group_heading": charge_group_heading,
+                        "request_type": request_type,
+                        "customer": customer
+                    }
+                    # Store the rule ID for the edit preview
+                    st.session_state.edit_rule_id = rule_id
+                    st.session_state.show_edit_preview_popup = True
                     st.rerun()
