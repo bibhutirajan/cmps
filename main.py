@@ -50,16 +50,23 @@ class AppConfig:
 # Initialize configuration
 config = AppConfig()
 
-# Force production data configuration for Snowflake deployment
-# Always apply staging config to ensure production tables are used
+# Environment-based configuration
 try:
     # Try to import snowflake.snowpark to detect Snowflake environment
     import snowflake.snowpark  # noqa: F401
-    DeploymentConfig.setup_snowflake_staging()
+    
+    # Check if we're in production environment
+    if os.getenv("ENVIRONMENT", "").upper() == "PRODUCTION":
+        DeploymentConfig.setup_production()
+    else:
+        # Default to SANDBOX for both LOCAL and SANDBOX environments
+        DeploymentConfig.setup_sandbox()
+    
     config = AppConfig()  # Reload config with new environment variables
 except ImportError:
-    # Local development environment - use default config
-    pass
+    # Local development environment - use SANDBOX tables
+    DeploymentConfig.setup_local()
+    config = AppConfig()  # Reload config with new environment variables
 
 
 # Utility Functions
@@ -269,7 +276,7 @@ def main():
     load_css()
     
     # Get data provider
-    data_provider = get_data_provider(config.SNOWFLAKE_ENABLED)
+    data_provider = get_data_provider()
     
     # Render sidebar and get selected customer
     customer = render_sidebar(data_provider)

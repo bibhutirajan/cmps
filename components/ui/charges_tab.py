@@ -27,7 +27,7 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     with col1:
         charge_type = st.selectbox(
             "Charge type",
-            ["Uncategorized (100)", "Approval needed (25)", "Approved (150)"],
+            ["Uncategorized"],
             index=0
         )
     

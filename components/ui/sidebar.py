@@ -23,13 +23,7 @@ def render_sidebar(data_provider: DataProvider) -> str:
         # Customer Selection Section
         st.markdown("### 🏢 Customer")
         
-        # Get available customers based on the data provider type
-        if hasattr(data_provider, '__class__') and 'Demo' in data_provider.__class__.__name__:
-            # Demo mode - use hardcoded customers
-            customer_options = ["AmerescoFTP", "OtherCustomer", "NewCustomer", "TestCustomer"]
-        else:
-            # Production mode - use customer names that map to organization IDs
-            customer_options = ["AmerescoFTP", "OtherCustomer", "NewCustomer", "TestCustomer"]
+        customer_options = ["Yardi", "AmerescoFTP"]
         
         selected_customer = st.selectbox(
             "Customer",
