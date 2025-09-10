@@ -1,0 +1,62 @@
+# Name the GitHub Action
+name: Deploy Charge Mapping Streamlit App to Snowflake
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build-and-deploy:
+    runs-on:
+      group: shared
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 'Setup Snowflake Config'
+        run: |
+          mkdir -p ~/.snowflake
+          cp .github/config/config_prd.toml ~/.snowflake/config.toml
+          chmod 600 ~/.snowflake/config.toml
+          mkdir -p ~/.ssh/
+          aws ssm get-parameter --name "/prd/charge-mapping/snowflake-private-key" --query "Parameter.Value" --output text --with-decryption > ~/.ssh/snowflake_ssh_private_key.p8
+          chmod 600 ~/.ssh/snowflake_ssh_private_key.p8
+
+      - name: 'Install snowflake-connector-python'
+        run: pip install snowflake-connector-python
+
+      - name: 'Run DB Migrations'
+        run: |
+          python src/resources/db_migrations/db_migrations.py
+
+      - name: 'Install Snowflake CLI'
+        run: pip install snowflake-cli-labs==3.7.2
+
+      - name: 'Drop charge-mapping stage for clean deployment'
+        shell: bash
+        run: |
+          snow sql --query "drop stage if exists charge-mapping;"
+
+      - name: 'Deploy the Charge Mapping Streamlit app'
+        shell: bash
+        run: |
+          snow streamlit deploy charge-mapping_prd --replace
+          snow sql --query "grant usage on streamlit applications.charge_mapping.charge-mapping to role rd_org_read;"
+          snow sql --query "grant usage on streamlit applications.charge_mapping.charge-mapping to role charge_mapping_user_role;"
+
+      - name: 'Get Streamlit App URL'
+        shell: bash
+        run: |
+          echo "Charge Mapping Streamlit App deployed successfully!"
+          echo "App URL: https://eda55635.us-east-1.snowflakeapp.com/applications/charge_mapping/charge-mapping"
+          echo "You can access the application using the above URL."
+

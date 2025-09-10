@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start Streamlit application for local development
-echo "Starting CMPS Streamlit Application..."
+echo "Starting Charge Mapping Streamlit Application..."
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
@@ -20,5 +20,5 @@ fi
 
 # Start Streamlit
 echo "Starting Streamlit on http://localhost:8501"
-streamlit run app.py --server.port 8501
+streamlit run main.py --server.port 8501
 

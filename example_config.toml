@@ -7,3 +7,16 @@ schema = "BMANOJKUMAR"
 role = "your_role"
 warehouse = "your_warehouse"
 
+# Alternative configuration for private key authentication
+# Uncomment and modify the following section to use private key authentication
+# [connections.default]
+# account = "eda55635.us-east-1"
+# user = "your_username"
+# authenticator = "snowflake_jwt"
+# database = "SANDBOX"
+# schema = "BMANOJKUMAR"
+# role = "your_role"
+# warehouse = "your_warehouse"
+# private_key_file = "charge_mapping_encrypted_private_key.p8"
+# private_key_passphrase = "your_passphrase"
+

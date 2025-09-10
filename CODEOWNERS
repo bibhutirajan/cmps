@@ -1,0 +1,16 @@
+# Global owners
+* @your-team-name
+
+# Main application files
+main.py @your-team-name
+config.py @your-team-name
+requirements.txt @your-team-name
+
+# Deployment files
+snowflake.yml @your-team-name
+bin/ @your-team-name
+
+# Documentation
+README.md @your-team-name
+DEPLOYMENT_GUIDE.md @your-team-name
+

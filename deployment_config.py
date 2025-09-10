@@ -30,12 +30,27 @@ class DeploymentConfig:
             "DATA_SOURCE": "snowflake",
             "SNOWFLAKE_ENABLED": "true",
             "SNOWFLAKE_DATABASE": "arcadia",
-            "SNOWFLAKE_SCHEMA": "lakehouse",
-            "CHARGES_TABLE": "charges",
-            "RULES_TABLE": "rules",
-            "PROCESSED_FILES_TABLE": "processed_files",
+            "SNOWFLAKE_SCHEMA": "lakehouse", 
+            "CHARGES_TABLE": "arcadia.export.hex_uc_charge_mapping_delivery",
+            "RULES_CUSTOMER_TABLE": "arcadia.lakehouse.f_combined_customer_charge_rules",
+            "RULES_PROVIDER_TABLE": "arcadia.lakehouse.f_combined_provider_template_charge_rules",
             "SIDEBAR_COLLAPSED": "true",
-            "DARK_THEME": "true"
+            "DARK_THEME": "false"
+        }
+    
+    @staticmethod
+    def get_snowflake_staging_config() -> Dict[str, Any]:
+        """Configuration for Snowflake Staging deployment (BMANOJKUMAR.Sandbox.staging)"""
+        return {
+            "DATA_SOURCE": "snowflake",
+            "SNOWFLAKE_ENABLED": "true",
+            "SNOWFLAKE_DATABASE": "BMANOJKUMAR",
+            "SNOWFLAKE_SCHEMA": "SANDBOX",
+            "CHARGES_TABLE": "arcadia.export.hex_uc_charge_mapping_delivery",
+            "RULES_CUSTOMER_TABLE": "arcadia.lakehouse.f_combined_customer_charge_rules", 
+            "RULES_PROVIDER_TABLE": "arcadia.lakehouse.f_combined_provider_template_charge_rules",
+            "SIDEBAR_COLLAPSED": "true",
+            "DARK_THEME": "false"
         }
     
     @staticmethod
@@ -73,6 +88,14 @@ class DeploymentConfig:
         DeploymentConfig.apply_config(config)
         print("✅ Snowflake Native App configuration applied")
         print("⚠️  Make sure to set SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, etc.")
+    
+    @staticmethod
+    def setup_snowflake_staging():
+        """Setup for Snowflake Staging deployment"""
+        config = DeploymentConfig.get_snowflake_staging_config()
+        DeploymentConfig.apply_config(config)
+        print("✅ Snowflake Staging configuration applied (BMANOJKUMAR.Sandbox.staging)")
+        print("⚠️  Make sure Snowflake connection is configured for staging environment")
     
     @staticmethod
     def setup_external_hosting():

@@ -1,0 +1,10 @@
+[connections.default]
+account = "eda55635.us-east-1"
+user = "svc_charge_mapping_user"
+authenticator = "SNOWFLAKE_JWT"
+private_key_file = "/home/runner/.ssh/snowflake_ssh_private_key.p8"
+database = "applications"
+schema = "charge_mapping"
+role = "charge_mapping_role"
+warehouse = "svc_charge_mapping_wh"
+

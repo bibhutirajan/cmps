@@ -1,4 +1,4 @@
-name: cmps
+name: charge-mapping
 channels:
   - snowflake
 dependencies:
@@ -8,6 +8,4 @@ dependencies:
   - snowflake-snowpark-python=1.32.0
   - plotly=5.24.1
   - tomli=2.0.1
-  - snowflake-connector-python
-  - snowflake-connector-python[secure-local-storage]
 

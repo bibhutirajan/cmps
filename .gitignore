@@ -55,4 +55,29 @@ Thumbs.db
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# Private keys and sensitive files
+*.p8
+*.pem
+*.key
+*.pub
+charge_mapping_encrypted_private_key.p8
+charge_mapping_encrypted_public_key.pub
+
+# Snowflake config
+snowflake_config.toml
+.snowflake/
+
+# Database files
+database/*.csv
+*.db
+*.sqlite
+
+# Deployment artifacts
+deployment_config.py
+
+# Build artifacts
+output/
+bundle/
+dist/ 

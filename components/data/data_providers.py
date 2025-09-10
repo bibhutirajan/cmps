@@ -4,10 +4,11 @@ Data Providers for Charge Mapping Application
 This module contains the data abstraction layer with providers for different data sources.
 """
 
+import os
 import pandas as pd
 import streamlit as st
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, List, Any
+from typing import Dict, Any
 from config import get_snowflake_session
 
 
@@ -23,13 +24,6 @@ class DataProvider(ABC):
     def get_rules(self, customer: str) -> pd.DataFrame:
         """Get rules data"""
         pass
-    
-    @abstractmethod
-    def get_processed_files(self, customer: str) -> pd.DataFrame:
-        """Get processed files data"""
-        pass
-    
-
     
     @abstractmethod
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
@@ -76,18 +70,6 @@ class DemoDataProvider(DataProvider):
             'Request type': [''] * 8
         })
     
-    def get_processed_files(self, customer: str) -> pd.DataFrame:
-        """Get demo processed files data"""
-        return pd.DataFrame({
-            'File ID': [f'FILE_{i:03d}' for i in range(1, 6)],
-            'Filename': [f'charges_{i}.csv' for i in range(1, 6)],
-            'Processed Date': ['2024-01-15', '2024-01-14', '2024-01-13', '2024-01-12', '2024-01-11'],
-            'Status': ['Processed', 'Processed', 'Processed', 'Processed', 'Processed'],
-            'Records': [150, 200, 175, 125, 300]
-        })
-    
-
-    
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
         """Demo rule creation"""
         st.success("🎉 Rule created successfully in demo mode!")
@@ -111,25 +93,63 @@ class SnowflakeDataProvider(DataProvider):
         self.session = session
         self.database = database
         self.schema = schema
+        
+        # Customer name to organization ID mapping
+        self.customer_to_org_id = {
+            "AmerescoFTP": "75",     # Updated to use available org ID with most data
+            "OtherCustomer": "617",  # Available org ID
+            "NewCustomer": "1482",   # Available org ID
+            "TestCustomer": "75"     # Fallback to same as AmerescoFTP
+        }
+    
+    def get_organization_id(self, customer: str) -> str:
+        """Convert customer name to organization ID"""
+        return self.customer_to_org_id.get(customer, customer)
     
     def get_charges(self, customer: str, charge_type: str = None) -> pd.DataFrame:
-        """Get charges data from Snowflake"""
+        """Get charges data from Snowflake based on charge type"""
         try:
-            query = f"""
-            SELECT 
-                STATEMENT_ID as "Statement ID",
-                PROVIDER_NAME as "Provider name",
-                ACCOUNT_NUMBER as "Account number",
-                CHARGE_NAME as "Charge name",
-                CHARGE_ID as "Charge ID",
-                CHARGE_MEASUREMENT as "Charge measurement",
-                USAGE_UNIT as "Usage unit",
-                SERVICE_TYPE as "Service type"
-            FROM {self.database}.{self.schema}.CHARGES
-            WHERE CUSTOMER_NAME = '{customer}'
-            """
-            # Note: CHARGE_TYPE column doesn't exist in the CHARGES table
-            # Filtering by charge_type is disabled for now
+            # Use production tables if CHARGES_TABLE environment variable is set to production table
+            charges_table = os.getenv("CHARGES_TABLE", "charges")
+            use_production_tables = "arcadia.export.hex_uc_charge_mapping_delivery" in charges_table
+            
+            if use_production_tables:
+                # Use remote table with direct filtering based on charge type
+                org_id = self.get_organization_id(customer)
+                
+                # Build WHERE clause based on charge type
+                if charge_type and "Uncategorized" in charge_type:
+                    where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}' AND CHARGE_ID = 'ch.uncategorized_charge'"
+                elif charge_type and "Approval needed" in charge_type:
+                    where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}' AND CONTRIBUTION_STATUS = 'non_contributing'"
+                elif charge_type and "Approved" in charge_type:
+                    where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}' AND CONTRIBUTION_STATUS = 'contributing'"
+                else:
+                    # Default: show all charges for the organization
+                    where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}'"
+                
+                query = f"""
+                SELECT *
+                FROM arcadia.export.hex_uc_charge_mapping_delivery
+                WHERE {where_clause}
+                ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
+                LIMIT 1000
+                """
+            else:
+                # Use local sandbox table
+                query = f"""
+                SELECT 
+                    STATEMENT_ID as "Statement ID",
+                    PROVIDER_NAME as "Provider name",
+                    ACCOUNT_NUMBER as "Account number",
+                    CHARGE_NAME as "Charge name",
+                    CHARGE_ID as "Charge ID",
+                    CHARGE_MEASUREMENT as "Charge measurement",
+                    USAGE_UNIT as "Usage unit",
+                    SERVICE_TYPE as "Service type"
+                FROM {self.database}.{self.schema}.CHARGES
+                WHERE CUSTOMER_NAME = '{customer}'
+                """
             
             return self.session.sql(query).to_pandas()
         except Exception as e:
@@ -139,46 +159,67 @@ class SnowflakeDataProvider(DataProvider):
     def get_rules(self, customer: str) -> pd.DataFrame:
         """Get rules data from Snowflake"""
         try:
-            query = f"""
-            SELECT 
-                CHIPS_BUSINESS_RULE_ID as "Rule ID",
-                CUSTOMER_NAME as "Customer name",
-                PRIORITY_ORDER as "Priority order",
-                CHARGE_NAME_MAPPING as "Charge name mapping",
-                CHARGE_ID as "Charge ID",
-                CHARGE_GROUP_HEADING as "Charge group heading",
-                CHARGE_CATEGORY as "Charge category",
-                REQUEST_TYPE as "Request type"
-            FROM {self.database}.{self.schema}.RULES
-            WHERE CUSTOMER_NAME = '{customer}'
-            ORDER BY PRIORITY_ORDER
-            """
-            df = self.session.sql(query).to_pandas()
-            return df
+            # Use production tables if RULES_CUSTOMER_TABLE environment variable is set to production table
+            rules_customer_table = os.getenv("RULES_CUSTOMER_TABLE", "rules")
+            use_production_tables = "arcadia.lakehouse.f_combined_customer_charge_rules" in rules_customer_table
+            
+            if use_production_tables:
+                # Use lakehouse tables for remote environment - simple direct queries
+                
+                # Get custom rules (customer-specific)
+                custom_rules_query = f"""
+                SELECT *, 'Custom' as RULE_TYPE
+                FROM arcadia.lakehouse.f_combined_customer_charge_rules
+                WHERE CUSTOMER_NAME = '{customer}'
+                ORDER BY PRIORITY_ORDER
+                LIMIT 100
+                """
+                
+                # Get global rules (provider template rules)
+                global_rules_query = """
+                SELECT *, 'Global' as RULE_TYPE
+                FROM arcadia.lakehouse.f_combined_provider_template_charge_rules
+                WHERE IS_ENABLED = TRUE
+                ORDER BY POSITION
+                LIMIT 100
+                """
+                
+                # Execute queries
+                custom_rules_df = self.session.sql(custom_rules_query).to_pandas()
+                global_rules_df = self.session.sql(global_rules_query).to_pandas()
+                
+                # Combine the dataframes
+                if not custom_rules_df.empty and not global_rules_df.empty:
+                    combined_df = pd.concat([custom_rules_df, global_rules_df], ignore_index=True)
+                elif not custom_rules_df.empty:
+                    combined_df = custom_rules_df
+                elif not global_rules_df.empty:
+                    combined_df = global_rules_df
+                else:
+                    combined_df = pd.DataFrame()
+                
+                return combined_df
+            else:
+                # Use local sandbox table
+                query = f"""
+                SELECT 
+                    CHIPS_BUSINESS_RULE_ID as "Rule ID",
+                    CUSTOMER_NAME as "Customer name",
+                    PRIORITY_ORDER as "Priority order",
+                    CHARGE_NAME_MAPPING as "Charge name mapping",
+                    CHARGE_ID as "Charge ID",
+                    CHARGE_GROUP_HEADING as "Charge group heading",
+                    CHARGE_CATEGORY as "Charge category",
+                    REQUEST_TYPE as "Request type"
+                FROM {self.database}.{self.schema}.RULES
+                WHERE CUSTOMER_NAME = '{customer}'
+                ORDER BY PRIORITY_ORDER
+                """
+                df = self.session.sql(query).to_pandas()
+                return df
         except Exception as e:
             st.error(f"Error fetching rules data: {str(e)}")
             return pd.DataFrame()
-    
-    def get_processed_files(self, customer: str) -> pd.DataFrame:
-        """Get processed files data from Snowflake"""
-        try:
-            query = f"""
-            SELECT 
-                FILE_ID as "File ID",
-                FILENAME as "Filename",
-                PROCESSED_DATE as "Processed Date",
-                STATUS as "Status",
-                RECORDS as "Records"
-            FROM {self.database}.{self.schema}.PROCESSED_FILES
-            WHERE CUSTOMER_NAME = '{customer}'
-            ORDER BY PROCESSED_DATE DESC
-            """
-            return self.session.sql(query).to_pandas()
-        except Exception as e:
-            st.error(f"Error fetching processed files data: {str(e)}")
-            return pd.DataFrame()
-    
-
     
     def create_rule(self, rule_data: Dict[str, Any]) -> bool:
         """Create a new rule in Snowflake"""

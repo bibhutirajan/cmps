@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 
 # Example: Load rules for a customer

@@ -8,26 +8,17 @@ else
   exit 1
 fi
 
-deploy_cmps() {
+deploy_charge_mapping() {
   # Uses your sandbox schema configured in ~/.snowflake/config.toml
-  snow sql --query "drop stage if exists cmps"
+      snow sql --query "drop stage if exists charge_mapping"
 
   # Deploy the app to the sandbox
   # Note: --replace only adds or updates existing files. It does not delete files. That's why we need the command above.
-  snow streamlit deploy cmps_dev --replace
-}
-
-deploy_application_dbs() {
-  python "$(dirname "$0")"/../src/resources/db_migrations/db_migrations.py
-  if [ $? -ne 0 ]; then
-    echo "Database migrations failed. Exiting."
-    exit 1
-  fi
+      snow streamlit deploy charge-mapping --replace
 }
 
 dispatch_deploy() {
-  deploy_application_dbs
-  deploy_cmps
+  deploy_charge_mapping
 }
 
 dispatch_deploy

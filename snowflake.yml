@@ -1,49 +1,52 @@
 definition_version: '2'
 entities:
-  cmps_dev:
+  charge-mapping:
     type: streamlit
     identifier:
-      name: cmps
-    main_file: app.py
+      name: charge_mapping
+      database: SANDBOX
+      schema: BMANOJKUMAR
+    main_file: main.py
     query_warehouse: RD_ORG_WH
-    stage: "cmps"
-    secrets:
-      snowflake_account: "applications.cmps.snowflake_account"
-      snowflake_user: "applications.cmps.snowflake_user"
-      snowflake_warehouse: "applications.cmps.snowflake_warehouse"
-      snowflake_database: "applications.cmps.snowflake_database"
-      snowflake_schema: "applications.cmps.snowflake_schema"
-      snowflake_role: "applications.cmps.snowflake_role"
+    stage: "charge_mapping"
+    # Secrets commented out for sandbox deployment
+    # secrets:
+    #   snowflake_account: "applications.charge_mapping.snowflake_account"
+    #   snowflake_user: "applications.charge_mapping.snowflake_user"
+    #   snowflake_warehouse: "applications.charge_mapping.snowflake_warehouse"
+    #   snowflake_database: "applications.charge_mapping.snowflake_database"
+    #   snowflake_schema: "applications.charge_mapping.snowflake_schema"
+    #   snowflake_role: "applications.charge_mapping.snowflake_role"
     artifacts:
       - environment.yml
-      - app.py
+      - main.py
       - config.py
       - db.py
       - deployment_config.py
       - components/**/*.py
-      - static/**/*
+      - static/css/styles.css
       - requirements.txt
       - .streamlit/config.toml
 
-  cmps_prd:
+  charge-mapping_prd:
     type: streamlit
     identifier:
-      name: cmps
+      name: charge-mapping
       database: applications
-      schema: cmps
-    main_file: app.py
-    query_warehouse: streamlit_cmps_wh
-    stage: "cmps"
+      schema: charge_mapping
+    main_file: main.py
+    query_warehouse: streamlit_charge_mapping_wh
+    stage: "charge_mapping"
     secrets:
-      snowflake_account: "applications.cmps.snowflake_account"
-      snowflake_user: "applications.cmps.snowflake_user"
-      snowflake_warehouse: "applications.cmps.snowflake_warehouse"
-      snowflake_database: "applications.cmps.snowflake_database"
-      snowflake_schema: "applications.cmps.snowflake_schema"
-      snowflake_role: "applications.cmps.snowflake_role"
+      snowflake_account: "applications.charge_mapping.snowflake_account"
+      snowflake_user: "applications.charge_mapping.snowflake_user"
+      snowflake_warehouse: "applications.charge_mapping.snowflake_warehouse"
+      snowflake_database: "applications.charge_mapping.snowflake_database"
+      snowflake_schema: "applications.charge_mapping.snowflake_schema"
+      snowflake_role: "applications.charge_mapping.snowflake_role"
     artifacts:
       - environment.yml
-      - app.py
+      - main.py
       - config.py
       - db.py
       - deployment_config.py

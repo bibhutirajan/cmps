@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Script to upload all files from cmps project to Snowflake stage
+Script to upload all files from charge-mapping project to Snowflake stage
 Handles nested directories and preserves structure
 """
 
-import os
 import snowflake.connector
 from pathlib import Path
 
 def upload_to_snowflake():
-    """Upload all files from cmps project to Snowflake stage"""
+    """Upload all files from charge-mapping project to Snowflake stage"""
     
     # Snowflake connection parameters
     conn = snowflake.connector.connect(
@@ -24,11 +23,11 @@ def upload_to_snowflake():
     cursor = conn.cursor()
     
     # Project root directory
-    project_root = Path('/opt/cmps')
+    project_root = Path('/opt/charge-mapping')
     
     # Files to upload (main files)
     main_files = [
-        'app.py',
+        'main.py',
         'config.py',
         'db.py',
         'requirements.txt',
@@ -41,7 +40,7 @@ def upload_to_snowflake():
         file_path = project_root / file_name
         if file_path.exists():
             print(f"Uploading {file_name}...")
-            cursor.execute(f"PUT file://{file_path} @cmps_app_stage")
+            cursor.execute(f"PUT file://{file_path} @charge_mapping_app_stage")
     
     # Upload components directory
     components_dir = project_root / 'components'
@@ -50,7 +49,7 @@ def upload_to_snowflake():
         for file_path in components_dir.rglob('*.py'):
             relative_path = file_path.relative_to(project_root)
             print(f"Uploading {relative_path}...")
-            cursor.execute(f"PUT file://{file_path} @cmps_app_stage")
+            cursor.execute(f"PUT file://{file_path} @charge_mapping_app_stage")
     
     # Upload static directory
     static_dir = project_root / 'static'
@@ -60,7 +59,7 @@ def upload_to_snowflake():
             if file_path.is_file():
                 relative_path = file_path.relative_to(project_root)
                 print(f"Uploading {relative_path}...")
-                cursor.execute(f"PUT file://{file_path} @cmps_app_stage")
+                cursor.execute(f"PUT file://{file_path} @charge_mapping_app_stage")
     
     print("Upload completed!")
     cursor.close()

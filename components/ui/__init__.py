@@ -1,1 +1,5 @@
-# UI Components package 
+"""
+UI Components Package
+
+This package contains all user interface components.
+""" 
