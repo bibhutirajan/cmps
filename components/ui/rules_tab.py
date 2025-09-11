@@ -18,24 +18,22 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         customer: The selected customer
     """
     
-    # Map column names for both local and remote environments (define at top level)
+    # Map column names for the specific columns we want to display
     column_mappings = {
-        # Local environment columns
-        "Rule ID": ("CHIPS_BUSINESS_RULE_ID", "Rule ID"),
-        "Customer name": ("CUSTOMER_NAME", "Customer name"),
-        "Priority order": ("PRIORITY_ORDER", "Priority order"),
-        "Charge name mapping": ("CHARGE_MAPPING_RULE", "Charge name mapping"),
-        "Charge ID": ("CHARGE_ID", "Charge ID"),
-        "Charge group heading": ("CHARGE_GROUP_HEADING", "Charge group heading"),
-        "Charge category": ("CATEGORIES", "Charge category"),
-        "Request type": ("REQUEST_TYPE", "Request type"),
-        # Additional remote environment columns
-        "RULE_TYPE": ("RULE_TYPE", "Rule Type"),
-        "IS_ENABLED": ("IS_ENABLED", "Enabled"),
-        "IS_APPROVED": ("IS_APPROVED", "Approved"),
-        "PROVIDER_ALIAS": ("PROVIDER_ALIAS", "Provider"),
+        "RULE_ID": ("RULE_ID", "Rule ID"),
+        "CUSTOMER_NAME": ("CUSTOMER_NAME", "Customer Name"),
+        "PRIORITY_ORDER": ("PRIORITY_ORDER", "Priority Order"),
+        "CHARGE_NAME": ("CHARGE_NAME", "Charge Name"),
+        "CHARGE_ID": ("CHARGE_ID", "Charge ID/Category"),
         "SERVICE_TYPE": ("SERVICE_TYPE", "Service Type"),
-        "MEASUREMENT_TYPE": ("MEASUREMENT_TYPE", "Measurement Type")
+        "ACCOUNT_NUMBER": ("ACCOUNT_NUMBER", "Account Number"),
+        "PROVIDER_NAME": ("PROVIDER_NAME", "Provider Name"),
+        "CREATED_DATE": ("CREATED_DATE", "Created Date"),
+        "MODIFIED_DATE": ("MODIFIED_DATE", "Modified Date"),
+        "CREATED_BY": ("CREATED_BY", "Created By"),
+        "MODIFIED_BY": ("MODIFIED_BY", "Modified By"),
+        "CHARGE_MEASUREMENT": ("CHARGE_MEASUREMENT", "Charge Measurement"),
+        "RULE_TYPE": ("RULE_TYPE", "Rule Type")
     }
     
     # Rules Header Section with inline Create rule button
@@ -71,10 +69,10 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     if not rules_df.empty:
         for col in rules_df.columns:
             # Convert all columns to string to avoid type compatibility issues
-            if col in ["CHIPS_BUSINESS_RULE_ID", "CHIPS_BUSINESS_RULE_SUBSET_ID", "PRIORITY_ORDER", "CHIPS_EXTRACTION_CHARGE_RULE_ID", "CHIPS_EXTRACTION_CHARGE_RULE_SET_ID", "VERSION", "POSITION"]:
+            if col in ["RULE_ID", "PRIORITY_ORDER"]:
                 # Convert numeric columns to string
                 rules_df[col] = rules_df[col].astype(str)
-            elif col in ["CREATED_AT", "UPDATED_AT", "VALIDATED_AT", "LAST_MODIFIED_AT"]:
+            elif col in ["CREATED_DATE", "MODIFIED_DATE"]:
                 # Convert datetime columns to string
                 rules_df[col] = rules_df[col].astype(str)
             elif rules_df[col].dtype == 'object':
@@ -160,18 +158,13 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     
     # Filter for custom rules (customer-specific)
     if 'CUSTOMER_NAME' in rules_df.columns:
-        # Remote environment with lakehouse tables
-        custom_rules_df = rules_df[rules_df['CUSTOMER_NAME'] == customer].copy()
-    elif 'Customer name' in rules_df.columns:
-        # Local environment with sandbox tables
-        custom_rules_df = rules_df[rules_df['Customer name'] == customer].copy()
+        # Filter for custom rules (RULE_TYPE = 'Custom')
+        custom_rules_df = rules_df[rules_df['RULE_TYPE'] == 'Custom'].copy()
     else:
         # No customer column available
         custom_rules_df = pd.DataFrame()
     
-    # Convert Request type column to string and handle NULL values
-    if 'Request type' in custom_rules_df.columns:
-        custom_rules_df['Request type'] = custom_rules_df['Request type'].astype(str).fillna('')
+    # No need to convert Request type column as it's not in our selected columns
     
     if not custom_rules_df.empty:
         # Initialize custom selection state
@@ -185,13 +178,12 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         for col in custom_rules_df.columns:
             if col in column_mappings:
                 remote_col, display_name = column_mappings[col]
-                if col in custom_rules_df.columns:
-                    if col in ["CHIPS_BUSINESS_RULE_ID", "PRIORITY_ORDER"]:
-                        column_config[col] = st.column_config.NumberColumn(display_name, width="small")
-                    elif col in ["IS_ENABLED", "IS_APPROVED"]:
-                        column_config[col] = st.column_config.CheckboxColumn(display_name, width="small")
-                    else:
-                        column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20)
+                if col in ["RULE_ID", "PRIORITY_ORDER"]:
+                    column_config[col] = st.column_config.NumberColumn(display_name, width="small")
+                elif col in ["CREATED_DATE", "MODIFIED_DATE"]:
+                    column_config[col] = st.column_config.TextColumn(display_name, width="medium")
+                else:
+                    column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20)
             else:
                 # Default configuration for unmapped columns
                 column_config[col] = st.column_config.TextColumn(col, width="medium", max_chars=20)
@@ -231,19 +223,12 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     st.markdown("### Global")
     st.markdown("Rules that apply to all customers. If no customer-specific rule overrides them.")
     
-    # Filter for global rules (all customers)
+    # Filter for global rules (RULE_TYPE = 'Global')
     if 'RULE_TYPE' in rules_df.columns:
-        # Remote environment - filter for global rules
         global_rules_df = rules_df[rules_df['RULE_TYPE'] == 'Global'].copy()
     else:
-        # Local environment - use all rules as global
-        global_rules_df = rules_df.copy()
-    
-    # Convert Request type column to string and handle NULL values
-    if 'REQUEST_TYPE' in global_rules_df.columns:
-        global_rules_df['REQUEST_TYPE'] = global_rules_df['REQUEST_TYPE'].astype(str).fillna('')
-    elif 'Request type' in global_rules_df.columns:
-        global_rules_df['Request type'] = global_rules_df['Request type'].astype(str).fillna('')
+        # No RULE_TYPE column available
+        global_rules_df = pd.DataFrame()
     
     if not global_rules_df.empty:
         # Initialize global selection state
@@ -257,13 +242,12 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         for col in global_rules_df.columns:
             if col in column_mappings:
                 remote_col, display_name = column_mappings[col]
-                if col in global_rules_df.columns:
-                    if col in ["CHIPS_BUSINESS_RULE_ID", "PRIORITY_ORDER", "POSITION"]:
-                        global_column_config[col] = st.column_config.NumberColumn(display_name, width="small")
-                    elif col in ["IS_ENABLED", "IS_APPROVED"]:
-                        global_column_config[col] = st.column_config.CheckboxColumn(display_name, width="small")
-                    else:
-                        global_column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20)
+                if col in ["RULE_ID", "PRIORITY_ORDER"]:
+                    global_column_config[col] = st.column_config.NumberColumn(display_name, width="small")
+                elif col in ["CREATED_DATE", "MODIFIED_DATE"]:
+                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium")
+                else:
+                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20)
             else:
                 # Default configuration for unmapped columns
                 global_column_config[col] = st.column_config.TextColumn(col, width="medium", max_chars=20)

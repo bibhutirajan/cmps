@@ -87,140 +87,166 @@ class SnowflakeDataProvider(DataProvider):
                 # Default: show all charges for the organization
                 where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}'"
             
-            if environment == "PRODUCTION":
-                # Use production tables
-                query = f"""
-                SELECT *
-                FROM arcadia.export.hex_uc_charge_mapping_delivery
-                WHERE {where_clause}
-                ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
-                LIMIT 1000
-                """
-            else:
-                # Use SANDBOX tables (for both LOCAL and SANDBOX environments)
-                query = f"""
-                SELECT *
-                FROM SANDBOX.BMANOJKUMAR.hex_uc_charge_mapping_delivery
-                WHERE {where_clause}
-                ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
-                LIMIT 1000
-                """
+            # Get table configuration
+            table_config = self._get_table_config()
+            table_name = table_config['charges_table']
+            
+            # Build query using table name
+            query = f"""
+            SELECT 
+                ODIN_STATEMENT_ID as STATEMENT_ID,
+                STATEMENT_DATE as STATEMENT_CREATED_DATE,
+                UTILITY_PROVIDER_NAME as PROVIDER_NAME,
+                NORMALIZED_ACCOUNT_NUMBER as ACCOUNT_NUMBER,
+                TARIFF_NAME as CHARGE_NAME,
+                CHARGE_ID as CHARGE_ID,
+                MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+                SERVICE_TYPE
+            FROM {table_name}
+            WHERE {where_clause}
+            ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
+            LIMIT 1000
+            """
             
             return self.session.sql(query).to_pandas()
         except Exception as e:
             st.error(f"Error fetching charges data: {str(e)}")
             return pd.DataFrame()
     
+    def _build_where_clause(self, base_where: str, filters: dict) -> str:
+        """Build WHERE clause for filtering rules data"""
+        where_conditions = [base_where]
+        
+        # Rule type filter
+        if filters.get('rule_type') and filters['rule_type'] != 'All':
+            if filters['rule_type'] == 'Custom':
+                where_conditions.append("RULE_TYPE = 'Custom'")
+            elif filters['rule_type'] == 'Global':
+                where_conditions.append("RULE_TYPE = 'Global'")
+        
+        # Charge ID filter
+        if filters.get('charge_id') and filters['charge_id'] != 'All Charge IDs':
+            where_conditions.append(f"CHARGE_ID = '{filters['charge_id']}'")
+        
+        # Provider filter
+        if filters.get('provider') and filters['provider'] != 'All Providers':
+            where_conditions.append(f"PROVIDER_ALIAS = '{filters['provider']}'")
+        
+        # Charge name filter (regex support for both custom and global rules)
+        if filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+            charge_name = filters['charge_name'].replace("\\", "\\\\")  # Escape backslashes
+            # For custom rules, filter on CHARGE_MAPPING_RULE
+            # For global rules, filter on CHARGE_REGEX_RULE
+            rule_type = filters.get('rule_type', 'All')
+            if rule_type == "Custom":
+                where_conditions.append(f"REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')")
+            elif rule_type == "Global":
+                where_conditions.append(f"REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')")
+            # For "All" rule type, we don't add charge name filtering here
+            # as it will be handled separately for each table
+        
+        return " AND ".join(where_conditions)
+    
+    def _get_table_config(self) -> Dict[str, str]:
+        """Get database, schema, and table configuration based on environment"""
+        environment = self.get_environment()
+        
+        if environment == "PRODUCTION":
+            return {
+                'database': 'arcadia',
+                'schema': 'lakehouse',
+                'custom_rules_table': 'f_combined_customer_charge_rules',
+                'global_rules_table': 'f_combined_provider_template_charge_rules',
+                'charges_table': 'arcadia.export.hex_uc_charge_mapping_delivery'
+            }
+        else:
+            # Use SANDBOX tables (for both LOCAL and SANDBOX environments)
+            return {
+                'database': 'SANDBOX',
+                'schema': 'BMANOJKUMAR',
+                'custom_rules_table': 'f_combined_customer_charge_rules',
+                'global_rules_table': 'f_combined_provider_template_charge_rules',
+                'charges_table': 'SANDBOX.BMANOJKUMAR.hex_uc_charge_mapping_delivery'
+            }
+    
+    def _build_custom_rules_query(self, table_name: str, customer: str, filters: dict) -> str:
+        """Build custom rules query with table name parameter"""
+        custom_base_where = f"CUSTOMER_NAME = '{customer}'"
+        custom_where = self._build_where_clause(custom_base_where, filters)
+        
+        # For "All" rule type with charge name filter, add charge name filtering to custom rules
+        if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+            charge_name = filters['charge_name'].replace("\\", "\\\\")
+            custom_where += f" AND REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')"
+        
+        return f"""
+        SELECT 
+            CHIPS_BUSINESS_RULE_ID as RULE_ID,
+            CUSTOMER_NAME,
+            PRIORITY_ORDER,
+            CHARGE_MAPPING_RULE as CHARGE_NAME,
+            CHARGE_ID,
+            SERVICE_TYPE,
+            ACCOUNT_NUMBER,
+            PROVIDER_ALIAS as PROVIDER_NAME,
+            CREATED_AT as CREATED_DATE,
+            UPDATED_AT as MODIFIED_DATE,
+            CREATED_BY,
+            LAST_MODIFIED_BY as MODIFIED_BY,
+            MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+            'Custom' as RULE_TYPE
+        FROM {table_name}
+        WHERE {custom_where}
+        ORDER BY PRIORITY_ORDER
+        LIMIT 100
+        """
+    
+    def _build_global_rules_query(self, table_name: str, filters: dict) -> str:
+        """Build global rules query with table name parameter"""
+        global_base_where = "IS_ENABLED = TRUE"
+        global_where = self._build_where_clause(global_base_where, filters)
+        
+        # For "All" rule type with charge name filter, add charge name filtering to global rules
+        if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+            charge_name = filters['charge_name'].replace("\\", "\\\\")
+            global_where += f" AND REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')"
+        
+        return f"""
+        SELECT 
+            CHIPS_EXTRACTION_CHARGE_RULE_ID as RULE_ID,
+            'Global' as CUSTOMER_NAME,
+            POSITION as PRIORITY_ORDER,
+            CHARGE_REGEX_RULE as CHARGE_NAME,
+            CHARGE_ID,
+            NULL as SERVICE_TYPE,
+            ACCOUNT_NUMBER,
+            PROVIDER_ALIAS as PROVIDER_NAME,
+            CREATED_AT as CREATED_DATE,
+            LAST_MODIFIED_AT as MODIFIED_DATE,
+            CREATED_BY,
+            LAST_MODIFIED_BY as MODIFIED_BY,
+            MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+            'Global' as RULE_TYPE
+        FROM {table_name}
+        WHERE {global_where}
+        ORDER BY POSITION
+        LIMIT 100
+        """
+
     def get_rules(self, customer: str, filters: Dict[str, str] = None) -> pd.DataFrame:
         """Get rules data from Snowflake based on environment with optional filters"""
         try:
             environment = self.get_environment()
             filters = filters or {}
             
-            # Build WHERE clauses for filters
-            def build_where_clause(base_where: str, filters: Dict[str, str]) -> str:
-                where_conditions = [base_where]
-                
-                # Rule type filter
-                if filters.get('rule_type') and filters['rule_type'] != 'All':
-                    if filters['rule_type'] == 'Custom':
-                        where_conditions.append("RULE_TYPE = 'Custom'")
-                    elif filters['rule_type'] == 'Global':
-                        where_conditions.append("RULE_TYPE = 'Global'")
-                
-                # Charge ID filter
-                if filters.get('charge_id') and filters['charge_id'] != 'All Charge IDs':
-                    where_conditions.append(f"CHARGE_ID = '{filters['charge_id']}'")
-                
-                # Provider filter
-                if filters.get('provider') and filters['provider'] != 'All Providers':
-                    where_conditions.append(f"PROVIDER_ALIAS = '{filters['provider']}'")
-                
-                # Charge name filter (regex support for both custom and global rules)
-                if filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-                    charge_name = filters['charge_name'].replace("\\", "\\\\")  # Escape backslashes
-                    # For custom rules, filter on CHARGE_MAPPING_RULE
-                    # For global rules, filter on CHARGE_REGEX_RULE
-                    rule_type = filters.get('rule_type', 'All')
-                    if rule_type == "Custom":
-                        where_conditions.append(f"REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')")
-                    elif rule_type == "Global":
-                        where_conditions.append(f"REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')")
-                    # For "All" rule type, we don't add charge name filtering here
-                    # as it will be handled separately for each table
-                
-                return " AND ".join(where_conditions)
+            # Get table configuration
+            table_config = self._get_table_config()
+            custom_table = f"{table_config['database']}.{table_config['schema']}.{table_config['custom_rules_table']}"
+            global_table = f"{table_config['database']}.{table_config['schema']}.{table_config['global_rules_table']}"
             
-            if environment == "PRODUCTION":
-                # Use production tables
-                # Get custom rules (customer-specific)
-                custom_base_where = f"CUSTOMER_NAME = '{customer}'"
-                custom_where = build_where_clause(custom_base_where, filters)
-                
-                # For "All" rule type with charge name filter, add charge name filtering to custom rules
-                if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-                    charge_name = filters['charge_name'].replace("\\", "\\\\")
-                    custom_where += f" AND REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')"
-                
-                custom_rules_query = f"""
-                SELECT *, 'Custom' as RULE_TYPE
-                FROM arcadia.lakehouse.f_combined_customer_charge_rules
-                WHERE {custom_where}
-                ORDER BY PRIORITY_ORDER
-                LIMIT 100
-                """
-                
-                # Get global rules (provider template rules)
-                global_base_where = "IS_ENABLED = TRUE"
-                global_where = build_where_clause(global_base_where, filters)
-                
-                # For "All" rule type with charge name filter, add charge name filtering to global rules
-                if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-                    charge_name = filters['charge_name'].replace("\\", "\\\\")
-                    global_where += f" AND REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')"
-                
-                global_rules_query = f"""
-                SELECT *, 'Global' as RULE_TYPE
-                FROM arcadia.lakehouse.f_combined_provider_template_charge_rules
-                WHERE {global_where}
-                ORDER BY POSITION
-                LIMIT 100
-                """
-            else:
-                # Use SANDBOX tables (for both LOCAL and SANDBOX environments)
-                # Get custom rules (customer-specific with organization filtering)
-                custom_base_where = f"CUSTOMER_NAME = '{customer}'"
-                custom_where = build_where_clause(custom_base_where, filters)
-                
-                # For "All" rule type with charge name filter, add charge name filtering to custom rules
-                if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-                    charge_name = filters['charge_name'].replace("\\", "\\\\")
-                    custom_where += f" AND REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')"
-                
-                custom_rules_query = f"""
-                SELECT *, 'Custom' as RULE_TYPE
-                FROM SANDBOX.BMANOJKUMAR.f_combined_customer_charge_rules
-                WHERE {custom_where}
-                ORDER BY PRIORITY_ORDER
-                LIMIT 100
-                """
-                
-                # Get global rules (provider template rules)
-                global_base_where = "IS_ENABLED = TRUE"
-                global_where = build_where_clause(global_base_where, filters)
-                
-                # For "All" rule type with charge name filter, add charge name filtering to global rules
-                if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-                    charge_name = filters['charge_name'].replace("\\", "\\\\")
-                    global_where += f" AND REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')"
-                
-                global_rules_query = f"""
-                SELECT *, 'Global' as RULE_TYPE
-                FROM SANDBOX.BMANOJKUMAR.f_combined_provider_template_charge_rules
-                WHERE {global_where}
-                ORDER BY POSITION
-                LIMIT 100
-                """
+            # Build queries using table names
+            custom_rules_query = self._build_custom_rules_query(custom_table, customer, filters)
+            global_rules_query = self._build_global_rules_query(global_table, filters)
             
             # Execute queries
             custom_rules_df = self.session.sql(custom_rules_query).to_pandas()
@@ -246,44 +272,29 @@ class SnowflakeDataProvider(DataProvider):
         try:
             environment = self.get_environment()
             
-            if environment == "PRODUCTION":
-                # Use production tables
-                filter_query = f"""
-                SELECT DISTINCT 
-                    CHARGE_ID,
-                    PROVIDER_ALIAS,
-                    CHARGE_MAPPING_RULE,
-                    CHARGE_REGEX_RULE
-                FROM (
-                    SELECT CHARGE_ID, PROVIDER_ALIAS, CHARGE_MAPPING_RULE, NULL as CHARGE_REGEX_RULE
-                    FROM arcadia.lakehouse.f_combined_customer_charge_rules
-                    WHERE CUSTOMER_NAME = '{customer}'
-                    UNION ALL
-                    SELECT CHARGE_ID, PROVIDER_ALIAS, NULL as CHARGE_MAPPING_RULE, CHARGE_REGEX_RULE
-                    FROM arcadia.lakehouse.f_combined_provider_template_charge_rules
-                    WHERE IS_ENABLED = TRUE
-                )
-                ORDER BY CHARGE_ID, PROVIDER_ALIAS
-                """
-            else:
-                # Use SANDBOX tables
-                filter_query = f"""
-                SELECT DISTINCT 
-                    CHARGE_ID,
-                    PROVIDER_ALIAS,
-                    CHARGE_MAPPING_RULE,
-                    CHARGE_REGEX_RULE
-                FROM (
-                    SELECT CHARGE_ID, PROVIDER_ALIAS, CHARGE_MAPPING_RULE, NULL as CHARGE_REGEX_RULE
-                    FROM SANDBOX.BMANOJKUMAR.f_combined_customer_charge_rules
-                    WHERE CUSTOMER_NAME = '{customer}'
-                    UNION ALL
-                    SELECT CHARGE_ID, PROVIDER_ALIAS, NULL as CHARGE_MAPPING_RULE, CHARGE_REGEX_RULE
-                    FROM SANDBOX.BMANOJKUMAR.f_combined_provider_template_charge_rules
-                    WHERE IS_ENABLED = TRUE
-                )
-                ORDER BY CHARGE_ID, PROVIDER_ALIAS
-                """
+            # Get table configuration
+            table_config = self._get_table_config()
+            custom_table = f"{table_config['database']}.{table_config['schema']}.{table_config['custom_rules_table']}"
+            global_table = f"{table_config['database']}.{table_config['schema']}.{table_config['global_rules_table']}"
+            
+            # Build query using table names
+            filter_query = f"""
+            SELECT DISTINCT 
+                CHARGE_ID,
+                PROVIDER_ALIAS,
+                CHARGE_MAPPING_RULE,
+                CHARGE_REGEX_RULE
+            FROM (
+                SELECT CHARGE_ID, PROVIDER_ALIAS, CHARGE_MAPPING_RULE, NULL as CHARGE_REGEX_RULE
+                FROM {custom_table}
+                WHERE CUSTOMER_NAME = '{customer}'
+                UNION ALL
+                SELECT CHARGE_ID, PROVIDER_ALIAS, NULL as CHARGE_MAPPING_RULE, CHARGE_REGEX_RULE
+                FROM {global_table}
+                WHERE IS_ENABLED = TRUE
+            )
+            ORDER BY CHARGE_ID, PROVIDER_ALIAS
+            """
             
             filter_df = self.session.sql(filter_query).to_pandas()
             
@@ -316,16 +327,11 @@ class SnowflakeDataProvider(DataProvider):
         try:
             environment = self.get_environment()
             
-            if environment == "PRODUCTION":
-                # Use production tables
-                database = "arcadia"
-                schema = "lakehouse"
-                rules_table = "f_combined_customer_charge_rules"
-            else:
-                # Use SANDBOX tables
-                database = "SANDBOX"
-                schema = "BMANOJKUMAR"
-                rules_table = "f_combined_customer_charge_rules"
+            # Get table configuration
+            table_config = self._get_table_config()
+            database = table_config['database']
+            schema = table_config['schema']
+            rules_table = table_config['custom_rules_table']
             
             # Get next rule ID and priority
             customer_name = rule_data.get('customer', '')
@@ -383,16 +389,11 @@ class SnowflakeDataProvider(DataProvider):
         try:
             environment = self.get_environment()
             
-            if environment == "PRODUCTION":
-                # Use production tables
-                database = "arcadia"
-                schema = "lakehouse"
-                rules_table = "f_combined_customer_charge_rules"
-            else:
-                # Use SANDBOX tables
-                database = "SANDBOX"
-                schema = "BMANOJKUMAR"
-                rules_table = "f_combined_customer_charge_rules"
+            # Get table configuration
+            table_config = self._get_table_config()
+            database = table_config['database']
+            schema = table_config['schema']
+            rules_table = table_config['custom_rules_table']
             
             # Determine request type
             request_type_value = 1 if rule_data.get('request_type') == 'NewBatch' else 0
