@@ -247,6 +247,7 @@ def render_main_content(data_provider: DataProvider, customer: str):
             create_rule_dialog(data_provider, customer, "show_create_rule_dialog_charges_tab")
         else:
             create_rule_dialog(data_provider, customer, "show_create_rule_dialog_rules_header")
+            # Reset the trigger flag after handling the dialog
             st.session_state.pop('create_rule_triggered_by_btn', None)
     elif st.session_state.get('show_edit_rule_dialog', False):
         from components.dialogs.edit_rule_dialog import edit_rule_dialog
@@ -258,6 +259,8 @@ def render_main_content(data_provider: DataProvider, customer: str):
     elif st.session_state.get('show_edit_priority_dialog', False):
         from components.dialogs.edit_priority_dialog import edit_priority_dialog
         edit_priority_dialog(data_provider, customer)
+        # Reset the trigger flag after handling the dialog
+        st.session_state.pop('edit_priority_triggered_by_btn', None)
     elif st.session_state.get('show_create_rule_preview', False):
         from components.dialogs.create_rule_preview_dialog import create_rule_preview_dialog
         preview_data = st.session_state.get('create_rule_preview_data', {})

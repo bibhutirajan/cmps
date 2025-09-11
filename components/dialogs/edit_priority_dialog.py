@@ -28,24 +28,31 @@ def edit_priority_dialog(data_provider: DataProvider, customer: str):
     
     if rules_df.empty:
         st.warning("No rules found for this customer.")
+        st.session_state.show_edit_priority_dialog = False
         return
     
     # Filter to show only custom rules (assuming they have a customer name)
-    custom_rules = rules_df[rules_df.get('Customer name', '').str.contains(customer, na=False)]
+    # Check if the column exists and filter properly
+    if 'CUSTOMER_NAME' in rules_df.columns:
+        custom_rules = rules_df[rules_df['CUSTOMER_NAME'].str.contains(customer, na=False)]
+    else:
+        # If no customer name column, assume all rules are custom for this customer
+        custom_rules = rules_df
     
     if custom_rules.empty:
         st.warning("No custom rules found for this customer.")
+        st.session_state.show_edit_priority_dialog = False
         return
     
     # Prepare data for editing
     priority_data = []
     for idx, row in custom_rules.iterrows():
         priority_data.append({
-            "Rule ID": row.get('CHIPS_BUSINESS_RULE_ID', ''),
-            "Priority": row.get('Priority order', ''),
-            "Charge Name Mapping": row.get('Charge name mapping', ''),
-            "Charge ID": row.get('Charge ID', ''),
-            "Active": row.get('Active', True)
+            "Rule ID": row.get('RULE_ID', ''),
+            "Priority": row.get('PRIORITY_ORDER', ''),
+            "Charge Name Mapping": row.get('CHARGE_NAME', ''),
+            "Charge ID": row.get('CHARGE_ID', ''),
+            "Active": row.get('IS_ENABLED', True)
         })
     
     # Create editable dataframe

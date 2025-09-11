@@ -18,6 +18,26 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         customer: The selected customer
     """
     
+    # Clear dialog states that shouldn't persist when just viewing/selecting rows
+    # Only keep create rule dialog state if it was explicitly triggered by button
+    if not st.session_state.get('create_rule_triggered_by_btn', False):
+        st.session_state.pop('show_create_rule_dialog_rules_header', None)
+    
+    # Clear edit priority dialog state if it wasn't explicitly triggered
+    # This prevents accidental dialog opening from other interactions
+    if not st.session_state.get('edit_priority_triggered_by_btn', False):
+        st.session_state.pop('show_edit_priority_dialog', None)
+    
+    # Ensure we're not in a row selection state that could trigger dialogs
+    # Reset any lingering dialog states that might have been set incorrectly
+    if 'custom_rules_table' in st.session_state or 'global_rules_table' in st.session_state:
+        # If we're just selecting rows, don't show create rule dialog
+        if not st.session_state.get('create_rule_triggered_by_btn', False):
+            st.session_state.pop('show_create_rule_dialog_rules_header', None)
+        # Don't show edit priority dialog unless explicitly triggered
+        if not st.session_state.get('edit_priority_triggered_by_btn', False):
+            st.session_state.pop('show_edit_priority_dialog', None)
+    
     # Map column names for the specific columns we want to display
     column_mappings = {
         "RULE_ID": ("RULE_ID", "Rule ID"),
@@ -127,6 +147,14 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
                 label_visibility="collapsed"
             )
     
+    # Filter for custom rules (customer-specific) - moved before UI elements
+    if 'CUSTOMER_NAME' in rules_df.columns:
+        # Filter for custom rules (RULE_TYPE = 'Custom')
+        custom_rules_df = rules_df[rules_df['RULE_TYPE'] == 'Custom'].copy()
+    else:
+        # No customer column available
+        custom_rules_df = pd.DataFrame()
+    
     # Custom Rules Section
     col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
     with col1:
@@ -134,10 +162,12 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         st.markdown("Rules specific to your organization. These override global rules and can be reordered or edited.")
         with col2:
             st.markdown("")  # Add spacing to align with heading
-            # Direct Edit Priority button
-            if st.button("Edit priority", key="edit_priority_custom_rules"):
-                st.session_state.show_edit_priority_dialog = True
-                st.rerun()
+            # Direct Edit Priority button - only show if there are custom rules
+            if not custom_rules_df.empty:
+                if st.button("Edit priority", key="edit_priority_custom_rules"):
+                    st.session_state.show_edit_priority_dialog = True
+                    st.session_state.edit_priority_triggered_by_btn = True
+                    st.rerun()
 
     with col3:
         st.markdown("")  # Add spacing to align with heading
@@ -155,14 +185,6 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         
     with col4:
         st.markdown("")  # Empty column to push buttons more to the right
-    
-    # Filter for custom rules (customer-specific)
-    if 'CUSTOMER_NAME' in rules_df.columns:
-        # Filter for custom rules (RULE_TYPE = 'Custom')
-        custom_rules_df = rules_df[rules_df['RULE_TYPE'] == 'Custom'].copy()
-    else:
-        # No customer column available
-        custom_rules_df = pd.DataFrame()
     
     # No need to convert Request type column as it's not in our selected columns
     
