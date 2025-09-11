@@ -40,6 +40,7 @@ For detailed deployment instructions, see **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 - **`main.py`** - Main Streamlit application entry point
 - **`components/`** - Modular UI components (dialogs, tabs, data providers)  
 - **`config.py`** - Snowflake connection and environment management
+- **`utils/`** - Utility scripts for environment setup and data sync
 - **`static/css/`** - Custom styling and theme
 - **`bin/`** - Deployment and setup scripts
 

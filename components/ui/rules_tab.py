@@ -53,8 +53,19 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             st.rerun()
         
     
-    # Get rules data
-    rules_df = data_provider.get_rules(customer)
+    # Get filter options for dynamic dropdowns
+    filter_options = data_provider.get_filter_options(customer)
+    
+    # Get current filter values from session state
+    current_filters = {
+        'rule_type': st.session_state.get('filter_rule_type', 'All'),
+        'charge_id': st.session_state.get('filter_charge_id', 'All Charge IDs'),
+        'provider': st.session_state.get('filter_provider', 'All Providers'),
+        'charge_name': st.session_state.get('filter_charge_name', 'All Charge Names')
+    }
+    
+    # Get rules data with filters
+    rules_df = data_provider.get_rules(customer, current_filters)
     
     # Handle data type issues for Streamlit compatibility
     if not rules_df.empty:
@@ -79,8 +90,8 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
     
     # Filters Section - minimal approach
     with st.expander("### Filters", expanded=True):
-        # Filter dropdowns - compact layout
-        col1, col2, col3, col4, col5 = st.columns(5)
+        # Filter dropdowns - compact layout (removed Customer name dropdown)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.markdown("**Rule type**")
@@ -92,37 +103,28 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             )
         
         with col2:
-            st.markdown("**Customer name**")
-            st.selectbox(
-                "Customer name",
-                [customer],
-                key="filter_customer_name",
-                label_visibility="collapsed"
-            )
-        
-        with col3:
             st.markdown("**Charge ID**")
             st.selectbox(
                 "Charge ID",
-                ["Placeholder", "NewBatch", "Other"],
+                filter_options.get('charge_ids', ['All Charge IDs', 'NewBatch', 'Other']),
                 key="filter_charge_id",
                 label_visibility="collapsed"
             )
         
-        with col4:
+        with col3:
             st.markdown("**Provider**")
             st.selectbox(
                 "Provider",
-                ["TBD", "Atmos", "Other"],
+                filter_options.get('providers', ['All Providers', 'Atmos', 'Other']),
                 key="filter_provider",
                 label_visibility="collapsed"
             )
         
-        with col5:
+        with col4:
             st.markdown("**Charge name**")
             st.selectbox(
                 "Charge name",
-                ["(?i)Electric\\s*service.*", "CHP Rider", "Other"],
+                filter_options.get('charge_names', ['All Charge Names', 'CHP Rider', 'Other']),
                 key="filter_charge_name",
                 label_visibility="collapsed"
             )

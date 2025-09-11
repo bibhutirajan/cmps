@@ -80,6 +80,26 @@ For detailed private key setup, see [PRIVATE_KEY_AUTH_IMPLEMENTATION.md](./PRIVA
 - **Sandbox**: `SANDBOX.BMANOJKUMAR.charges`
 - **Demo**: In-memory sample data for offline development
 
+## 🛠️ Utility Scripts
+
+The `utils/` folder contains helpful scripts for development and deployment:
+
+### Environment Configuration
+```bash
+# Configure for different environments
+python utils/setup_environment.py local     # Local development
+python utils/setup_environment.py sandbox   # Sandbox environment  
+python utils/setup_environment.py production # Production environment
+```
+
+### Data Synchronization
+```bash
+# Sync production data to local sandbox
+python utils/sync_production_data.py
+```
+
+For more details, see [utils/README.md](./utils/README.md)
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
