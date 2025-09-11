@@ -149,10 +149,11 @@ def create_rule_dialog(data_provider: DataProvider, customer: str, dialog_state_
         key="dialog_rule_priority_order"
     )
     
+    # Action buttons with proper horizontal alignment
     st.markdown("---")
     
-    # Action buttons
-    col1, col2 = st.columns([1, 1])
+    # Action buttons - left and right aligned
+    col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
         if st.button("❌ Cancel", key="dialog_cancel_rule"):
@@ -163,7 +164,7 @@ def create_rule_dialog(data_provider: DataProvider, customer: str, dialog_state_
             st.session_state.pop('create_rule_triggered_by_btn', None)
             st.rerun()
     
-    with col2:
+    with col3:
         if st.button("🔍 Preview", key="dialog_preview_rule", type="primary"):
             # Create rule data for preview
             rule_data = {

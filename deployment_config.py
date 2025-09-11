@@ -5,6 +5,9 @@ This file provides easy configuration for different deployment scenarios:
 1. LOCAL - Local development with SANDBOX tables
 2. SANDBOX - Sandbox environment with SANDBOX tables  
 3. PRODUCTION - Production environment with ARCADIA tables
+
+NOTE: Currently bypassing environment logic to always use PRODUCTION tables.
+See data_providers.py _get_table_config() method for details.
 """
 
 import os

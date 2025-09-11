@@ -208,16 +208,17 @@ def edit_rule_dialog(data_provider: DataProvider, customer: str, rule_data: dict
         key="edit_dialog_rule_charge_id"
     )
     
+    # Action buttons with proper horizontal alignment
     st.markdown("---")
     
-    # Action buttons
-    col1, col2 = st.columns(2)
+    # Action buttons - left and right aligned
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         if st.button("❌ Cancel", key="edit_rule_cancel"):
             st.session_state.pop(dialog_state_key, None)
             st.rerun()
     
-    with col2:
+    with col3:
         if st.button("🔍 Preview Changes", key="edit_rule_preview", type="primary"):
             # Create rule data for preview
             updated_rule_data = {

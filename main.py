@@ -23,9 +23,6 @@ from components.ui.charges_tab import render_charges_tab
 from components.ui.rules_tab import render_rules_tab
 from deployment_config import DeploymentConfig
 
-
-
-
 # Configuration
 
 @dataclass
@@ -68,8 +65,6 @@ except ImportError:
     DeploymentConfig.setup_local()
     config = AppConfig()  # Reload config with new environment variables
 
-
-# Utility Functions
 
 def load_css():
     """Load the CSS file"""
@@ -237,10 +232,17 @@ def render_main_content(data_provider: DataProvider, customer: str):
         render_rules_tab(data_provider, customer)
     
     # CENTRALIZED DIALOG MANAGEMENT - Only one dialog at a time across entire app
-    # Priority order: Create Rule (any tab) -> Edit Rule -> Edit Priority -> Preview dialogs
-    if (st.session_state.get('show_create_rule_dialog_charges_tab', False) or 
-        (st.session_state.get('show_create_rule_dialog_rules_header', False) and
-         st.session_state.get('create_rule_triggered_by_btn', False))):
+    # Priority order: Edit Rule -> Create Rule (any tab) -> Edit Priority -> Preview dialogs
+    if st.session_state.get('show_edit_rule_dialog', False):
+        from components.dialogs.edit_rule_dialog import edit_rule_dialog
+        from components.ui.rules_tab import transform_rule_data_for_edit
+        selected_rule = st.session_state.get('selected_rule_for_edit', {})
+        # Transform rule data to match edit form structure
+        transformed_rule_data = transform_rule_data_for_edit(selected_rule)
+        edit_rule_dialog(data_provider, customer, transformed_rule_data, "show_edit_rule_dialog")
+    elif (st.session_state.get('show_create_rule_dialog_charges_tab', False) or 
+          (st.session_state.get('show_create_rule_dialog_rules_header', False) and
+           st.session_state.get('create_rule_triggered_by_btn', False))):
         from components.dialogs.create_rule_dialog import create_rule_dialog
         # Determine which tab triggered the dialog and use appropriate session key
         if st.session_state.get('show_create_rule_dialog_charges_tab', False):
@@ -249,13 +251,6 @@ def render_main_content(data_provider: DataProvider, customer: str):
             create_rule_dialog(data_provider, customer, "show_create_rule_dialog_rules_header")
             # Reset the trigger flag after handling the dialog
             st.session_state.pop('create_rule_triggered_by_btn', None)
-    elif st.session_state.get('show_edit_rule_dialog', False):
-        from components.dialogs.edit_rule_dialog import edit_rule_dialog
-        from components.ui.rules_tab import transform_rule_data_for_edit
-        selected_rule = st.session_state.get('selected_rule_for_edit', {})
-        # Transform rule data to match edit form structure
-        transformed_rule_data = transform_rule_data_for_edit(selected_rule)
-        edit_rule_dialog(data_provider, customer, transformed_rule_data, "show_edit_rule_dialog")
     elif st.session_state.get('show_edit_priority_dialog', False):
         from components.dialogs.edit_priority_dialog import edit_priority_dialog
         edit_priority_dialog(data_provider, customer)
@@ -270,8 +265,6 @@ def render_main_content(data_provider: DataProvider, customer: str):
         preview_data = st.session_state.get('edit_rule_preview_data', {})
         edit_rule_preview_dialog(data_provider, customer, preview_data, "show_edit_rule_preview")
 
-
-# Main Application
 
 def main():
     """Main application function"""

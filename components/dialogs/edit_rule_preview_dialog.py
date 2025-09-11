@@ -82,8 +82,8 @@ def edit_rule_preview_dialog(data_provider: DataProvider, customer: str, rule_da
     # Apply to existing charges checkbox
     apply_to_existing = st.checkbox("Apply rule to 12 existing charge(s)", value=True, key="edit_preview_apply_to_existing")
     
-    # Action buttons
-    col1, col2, col3 = st.columns(3)
+    # Action buttons - left, center, right aligned
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         if st.button("Cancel", key="edit_preview_cancel"):
             st.session_state.pop(dialog_state_key, None)

@@ -73,10 +73,11 @@ def edit_priority_dialog(data_provider: DataProvider, customer: str):
         key="priority_editor"
     )
     
+    # Action buttons with proper horizontal alignment
     st.markdown("---")
     
-    # Action buttons
-    col1, col2, col3 = st.columns(3)
+    # Action buttons - left, center, right aligned
+    col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
         if st.button("Cancel", key="priority_cancel"):

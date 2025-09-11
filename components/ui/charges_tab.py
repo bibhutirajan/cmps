@@ -19,7 +19,7 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
     st.markdown("### Charges")
-    st.markdown("Start by viewing all charges, then filter by category: Uncategorized, Approval needed, or Approved.")
+    st.markdown("This table shows list of uncategorized charges from the processed statements.")
     
     # Filter section - improved layout 
     col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
@@ -36,11 +36,34 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
         if st.button("Create rule", key="create_rule_charges_tab", type="primary"):
             st.session_state.show_create_rule_dialog_charges_tab = True
             st.rerun()
-        
-        # Dialog will be handled by centralized dialog manager in main.py
     
-    # Get charges data
-    charges_df = data_provider.get_charges(customer, charge_type)
+    # Pagination settings
+    if 'charges_page_size' not in st.session_state:
+        st.session_state.charges_page_size = 50
+    page_size = st.session_state.charges_page_size
+    
+    if 'charges_page' not in st.session_state:
+        st.session_state.charges_page = 1
+    
+    # Reset to page 1 when charge type changes
+    if 'last_charge_type' not in st.session_state:
+        st.session_state.last_charge_type = charge_type
+    elif st.session_state.last_charge_type != charge_type:
+        st.session_state.charges_page = 1
+        st.session_state.last_charge_type = charge_type
+    
+    # Get total count for pagination
+    total_count = data_provider.get_charges_count(customer, charge_type)
+    
+    # Calculate total pages
+    total_pages = int((total_count + page_size - 1) // page_size) if total_count > 0 else 1
+    
+    # Get charges data for current page
+    charges_df = data_provider.get_charges(customer, charge_type, st.session_state.charges_page, page_size)
+    
+    # Show message if no charges found
+    if charges_df.empty:
+        st.info("No uncategorized charges found.")
     
     # Handle data type issues for Streamlit compatibility
     if not charges_df.empty:
@@ -84,9 +107,47 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
         on_select="rerun"
     )
     
+    # pagination controls at bottom of table
+    if total_count > 0:
+        # Create a single row with page info (including total count) on left and controls on right
+        col1, col2, col3 = st.columns([4, 0.8, 0.8])
+        
+        with col1:
+            # Page info with total count on the left (unbolded)
+            st.markdown(f"Page {st.session_state.charges_page} of {total_pages} ({total_count:,} total)")
+        
+        with col2:
+            # Page input control
+            page_input = st.number_input(
+                "Page", 
+                min_value=1, 
+                max_value=total_pages, 
+                value=st.session_state.charges_page,
+                step=1,
+                key="page_input"
+            )
+            if page_input != st.session_state.charges_page:
+                st.session_state.charges_page = int(page_input)
+                st.rerun()
+        
+        with col3:
+            # Page size input control
+            rows_per_page = st.number_input(
+                "Page size", 
+                min_value=10, 
+                max_value=1000, 
+                value=st.session_state.charges_page_size,
+                step=10,
+                key="rows_per_page"
+            )
+            if rows_per_page != st.session_state.charges_page_size:
+                st.session_state.charges_page_size = int(rows_per_page)
+                st.session_state.charges_page = 1  # Reset to page 1 when page size changes
+                st.rerun()
+    
     # Handle row selection
     if selected_rows.selection.rows:
-        # Get selected rows data
+        # Get selected rows data from the full dataframe
         selected_indices = selected_rows.selection.rows
         selected_charges = charges_df.iloc[selected_indices].to_dict('records')
         
@@ -98,18 +159,6 @@ def render_charges_tab(data_provider: DataProvider, customer: str):
     else:
         # Clear selection if no rows selected
         st.session_state.selected_charges = []
-        st.info("💡 Select rows using the checkboxes to create or edit rules")
-    
-    # Pagination
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col1:
-        st.markdown("Page 1 of 3")
-    with col3:
-        col_a, col_b, col_c = st.columns(3)
-        with col_a:
-            st.number_input("Page", min_value=0, value=0, key="page_num")
-        with col_b:
-            st.number_input("Page size", min_value=10, value=30, key="page_size")
     
     st.markdown('</div>', unsafe_allow_html=True)
 

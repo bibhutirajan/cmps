@@ -17,8 +17,8 @@ class DataProvider(ABC):
     """Abstract base class for data providers"""
     
     @abstractmethod
-    def get_charges(self, customer: str, charge_type: str = None) -> pd.DataFrame:
-        """Get charges data"""
+    def get_charges(self, customer: str, charge_type: str = None, page: int = 1, page_size: int = 50) -> pd.DataFrame:
+        """Get charges data with pagination"""
         pass
     
     @abstractmethod
@@ -74,8 +74,50 @@ class SnowflakeDataProvider(DataProvider):
         """Convert customer name to organization ID"""
         return self.customer_to_org_id.get(customer, customer)
     
-    def get_charges(self, customer: str, charge_type: str = None) -> pd.DataFrame:
-        """Get charges data from Snowflake based on environment and charge type"""
+    def get_charges(self, customer: str, charge_type: str = None, page: int = 1, page_size: int = 50) -> pd.DataFrame:
+        """Get charges data from Snowflake based on environment and charge type with pagination"""
+        try:
+            environment = self.get_environment()
+            org_id = self.get_organization_id(customer)
+            
+            # Build WHERE clause based on charge type
+            if charge_type and "Uncategorized" in charge_type:
+                where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}' AND (CHARGE_ID IS NULL OR CHARGE_ID = 'ch.uncategorized_charge')"
+            else:
+                # Default: show all charges for the organization
+                where_clause = f"ODIN_ORGANIZATION_ID = '{org_id}'"
+                
+            # Get table configuration
+            table_config = self._get_table_config()
+            table_name = table_config['charges_table']
+            
+            # Calculate offset for pagination
+            offset = (page - 1) * page_size
+            
+            # Build query using table name with pagination
+            query = f"""
+            SELECT 
+                ODIN_STATEMENT_ID as STATEMENT_ID,
+                STATEMENT_DATE as STATEMENT_CREATED_DATE,
+                UTILITY_PROVIDER_NAME as PROVIDER_NAME,
+                NORMALIZED_ACCOUNT_NUMBER as ACCOUNT_NUMBER,
+                TARIFF_NAME as CHARGE_NAME,
+                CHARGE_ID as CHARGE_ID,
+                MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+                SERVICE_TYPE
+            FROM {table_name}
+                WHERE {where_clause}
+                ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
+            LIMIT {page_size} OFFSET {offset}
+                """
+            
+            return self.session.sql(query).to_pandas()
+        except Exception as e:
+            st.error(f"Error fetching charges data: {str(e)}")
+            return pd.DataFrame()
+    
+    def get_charges_count(self, customer: str, charge_type: str = None) -> int:
+        """Get total count of charges for pagination"""
         try:
             environment = self.get_environment()
             org_id = self.get_organization_id(customer)
@@ -91,27 +133,18 @@ class SnowflakeDataProvider(DataProvider):
             table_config = self._get_table_config()
             table_name = table_config['charges_table']
             
-            # Build query using table name
+            # Build count query
             query = f"""
-            SELECT 
-                ODIN_STATEMENT_ID as STATEMENT_ID,
-                STATEMENT_DATE as STATEMENT_CREATED_DATE,
-                UTILITY_PROVIDER_NAME as PROVIDER_NAME,
-                NORMALIZED_ACCOUNT_NUMBER as ACCOUNT_NUMBER,
-                TARIFF_NAME as CHARGE_NAME,
-                CHARGE_ID as CHARGE_ID,
-                MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
-                SERVICE_TYPE
+            SELECT COUNT(*) as total_count
             FROM {table_name}
             WHERE {where_clause}
-            ORDER BY STATEMENT_DATE DESC, ODIN_STATEMENT_ID
-            LIMIT 1000
             """
             
-            return self.session.sql(query).to_pandas()
+            result = self.session.sql(query).to_pandas()
+            return int(result.iloc[0]['TOTAL_COUNT']) if not result.empty else 0
         except Exception as e:
-            st.error(f"Error fetching charges data: {str(e)}")
-            return pd.DataFrame()
+            st.error(f"Error fetching charges count: {str(e)}")
+            return 0
     
     def _build_where_clause(self, base_where: str, filters: dict) -> str:
         """Build WHERE clause for filtering rules data"""
@@ -151,23 +184,34 @@ class SnowflakeDataProvider(DataProvider):
         """Get database, schema, and table configuration based on environment"""
         environment = self.get_environment()
         
-        if environment == "PRODUCTION":
-            return {
-                'database': 'arcadia',
-                'schema': 'lakehouse',
-                'custom_rules_table': 'f_combined_customer_charge_rules',
-                'global_rules_table': 'f_combined_provider_template_charge_rules',
-                'charges_table': 'arcadia.export.hex_uc_charge_mapping_delivery'
-            }
-        else:
-            # Use SANDBOX tables (for both LOCAL and SANDBOX environments)
-            return {
-                'database': 'SANDBOX',
-                'schema': 'BMANOJKUMAR',
-                'custom_rules_table': 'f_combined_customer_charge_rules',
-                'global_rules_table': 'f_combined_provider_template_charge_rules',
-                'charges_table': 'SANDBOX.BMANOJKUMAR.hex_uc_charge_mapping_delivery'
-            }
+        # TEMPORARY: Always use PRODUCTION tables (bypassing SANDBOX/LOCAL)
+        # TODO: Uncomment the environment-based logic below when ready to revert
+        return {
+            'database': 'arcadia',
+            'schema': 'lakehouse',
+            'custom_rules_table': 'f_combined_customer_charge_rules',
+            'global_rules_table': 'f_combined_provider_template_charge_rules',
+            'charges_table': 'arcadia.export.hex_uc_charge_mapping_delivery'
+        }
+        
+        # COMMENTED OUT - Original environment-based logic:
+        # if environment == "PRODUCTION":
+        #     return {
+        #         'database': 'arcadia',
+        #         'schema': 'lakehouse',
+        #         'custom_rules_table': 'f_combined_customer_charge_rules',
+        #         'global_rules_table': 'f_combined_provider_template_charge_rules',
+        #         'charges_table': 'arcadia.export.hex_uc_charge_mapping_delivery'
+        #     }
+        # else:
+        #     # Use SANDBOX tables (for both LOCAL and SANDBOX environments)
+        #     return {
+        #         'database': 'SANDBOX',
+        #         'schema': 'BMANOJKUMAR',
+        #         'custom_rules_table': 'f_combined_customer_charge_rules',
+        #         'global_rules_table': 'f_combined_provider_template_charge_rules',
+        #         'charges_table': 'SANDBOX.BMANOJKUMAR.hex_uc_charge_mapping_delivery'
+        #     }
     
     def _build_custom_rules_query(self, table_name: str, customer: str, filters: dict) -> str:
         """Build custom rules query with table name parameter"""
@@ -198,7 +242,6 @@ class SnowflakeDataProvider(DataProvider):
         FROM {table_name}
         WHERE {custom_where}
         ORDER BY PRIORITY_ORDER
-        LIMIT 100
         """
     
     def _build_global_rules_query(self, table_name: str, filters: dict) -> str:
@@ -230,7 +273,6 @@ class SnowflakeDataProvider(DataProvider):
         FROM {table_name}
         WHERE {global_where}
         ORDER BY POSITION
-        LIMIT 100
         """
 
     def get_rules(self, customer: str, filters: Dict[str, str] = None) -> pd.DataFrame:
@@ -266,6 +308,180 @@ class SnowflakeDataProvider(DataProvider):
         except Exception as e:
             st.error(f"Error fetching rules data: {str(e)}")
             return pd.DataFrame()
+    
+    def _build_custom_rules_query_paginated(self, table_name: str, customer: str, filters: dict, page: int, page_size: int) -> str:
+        """Build custom rules query with pagination"""
+        custom_base_where = f"CUSTOMER_NAME = '{customer}'"
+        custom_where = self._build_where_clause(custom_base_where, filters)
+        
+        # For "All" rule type with charge name filter, add charge name filtering to custom rules
+        if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+            charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+            custom_where += f" AND CHARGE_MAPPING_RULE = '{charge_name}'"
+        
+        # Calculate offset for pagination
+        offset = (page - 1) * page_size
+        
+        return f"""
+        SELECT 
+            CHIPS_BUSINESS_RULE_ID as RULE_ID,
+            CUSTOMER_NAME,
+            PRIORITY_ORDER,
+            CHARGE_MAPPING_RULE as CHARGE_NAME,
+            CHARGE_ID,
+            SERVICE_TYPE,
+            ACCOUNT_NUMBER,
+            PROVIDER_ALIAS as PROVIDER_NAME,
+            CREATED_AT as CREATED_DATE,
+            UPDATED_AT as MODIFIED_DATE,
+            CREATED_BY,
+            LAST_MODIFIED_BY as MODIFIED_BY,
+            MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+            'Custom' as RULE_TYPE
+        FROM {table_name}
+        WHERE {custom_where}
+        ORDER BY PRIORITY_ORDER
+        LIMIT {page_size} OFFSET {offset}
+        """
+    
+    def get_custom_rules(self, customer: str, filters: Dict[str, str] = None, page: int = 1, page_size: int = 50) -> pd.DataFrame:
+        """Get custom rules data with pagination"""
+        try:
+            environment = self.get_environment()
+            filters = filters or {}
+            
+            # Get table configuration
+            table_config = self._get_table_config()
+            custom_table = f"{table_config['database']}.{table_config['schema']}.{table_config['custom_rules_table']}"
+            
+            # Build custom rules query with pagination
+            custom_rules_query = self._build_custom_rules_query_paginated(custom_table, customer, filters, page, page_size)
+            
+            # Execute query
+            custom_rules_df = self.session.sql(custom_rules_query).to_pandas()
+            
+            return custom_rules_df
+        except Exception as e:
+            st.error(f"Error fetching custom rules data: {str(e)}")
+            return pd.DataFrame()
+    
+    def _build_global_rules_query_paginated(self, table_name: str, filters: dict, page: int, page_size: int) -> str:
+        """Build global rules query with pagination"""
+        global_base_where = "IS_ENABLED = TRUE"
+        global_where = self._build_where_clause(global_base_where, filters)
+        
+        # For "All" rule type with charge name filter, add charge name filtering to global rules
+        if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+            charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+            global_where += f" AND CHARGE_REGEX_RULE = '{charge_name}'"
+        
+        # Calculate offset for pagination
+        offset = (page - 1) * page_size
+        
+        return f"""
+        SELECT 
+            CHIPS_EXTRACTION_CHARGE_RULE_ID as RULE_ID,
+            'Global' as CUSTOMER_NAME,
+            POSITION as PRIORITY_ORDER,
+            CHARGE_REGEX_RULE as CHARGE_NAME,
+            CHARGE_ID,
+            NULL as SERVICE_TYPE,
+            ACCOUNT_NUMBER,
+            PROVIDER_ALIAS as PROVIDER_NAME,
+            CREATED_AT as CREATED_DATE,
+            LAST_MODIFIED_AT as MODIFIED_DATE,
+            CREATED_BY,
+            LAST_MODIFIED_BY as MODIFIED_BY,
+            MEASUREMENT_TYPE as CHARGE_MEASUREMENT,
+            'Global' as RULE_TYPE
+        FROM {table_name}
+        WHERE {global_where}
+        ORDER BY POSITION
+        LIMIT {page_size} OFFSET {offset}
+        """
+    
+    def get_global_rules(self, filters: Dict[str, str] = None, page: int = 1, page_size: int = 50) -> pd.DataFrame:
+        """Get global rules data with pagination"""
+        try:
+            environment = self.get_environment()
+            filters = filters or {}
+            
+            # Get table configuration
+            table_config = self._get_table_config()
+            global_table = f"{table_config['database']}.{table_config['schema']}.{table_config['global_rules_table']}"
+            
+            # Build global rules query with pagination
+            global_rules_query = self._build_global_rules_query_paginated(global_table, filters, page, page_size)
+            
+            # Execute query
+            global_rules_df = self.session.sql(global_rules_query).to_pandas()
+            
+            return global_rules_df
+        except Exception as e:
+            st.error(f"Error fetching global rules data: {str(e)}")
+            return pd.DataFrame()
+    
+    def get_custom_rules_count(self, customer: str, filters: Dict[str, str] = None) -> int:
+        """Get total count of custom rules"""
+        try:
+            environment = self.get_environment()
+            filters = filters or {}
+            
+            # Get table configuration
+            table_config = self._get_table_config()
+            custom_table = f"{table_config['database']}.{table_config['schema']}.{table_config['custom_rules_table']}"
+            
+            # Build count query for custom rules
+            custom_base_where = f"CUSTOMER_NAME = '{customer}'"
+            custom_where = self._build_where_clause(custom_base_where, filters)
+            
+            # For "All" rule type with charge name filter, add charge name filtering to custom rules
+            if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+                charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+                custom_where += f" AND CHARGE_MAPPING_RULE = '{charge_name}'"
+            
+            count_query = f"""
+            SELECT COUNT(*) as TOTAL_COUNT
+            FROM {custom_table}
+            WHERE {custom_where}
+            """
+            
+            result = self.session.sql(count_query).to_pandas()
+            return int(result.iloc[0]['TOTAL_COUNT'])
+        except Exception as e:
+            st.error(f"Error fetching custom rules count: {str(e)}")
+            return 0
+    
+    def get_global_rules_count(self, filters: Dict[str, str] = None) -> int:
+        """Get total count of global rules"""
+        try:
+            environment = self.get_environment()
+            filters = filters or {}
+            
+            # Get table configuration
+            table_config = self._get_table_config()
+            global_table = f"{table_config['database']}.{table_config['schema']}.{table_config['global_rules_table']}"
+            
+            # Build count query for global rules
+            global_base_where = "IS_ENABLED = TRUE"
+            global_where = self._build_where_clause(global_base_where, filters)
+            
+            # For "All" rule type with charge name filter, add charge name filtering to global rules
+            if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
+                charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+                global_where += f" AND CHARGE_REGEX_RULE = '{charge_name}'"
+            
+            count_query = f"""
+            SELECT COUNT(*) as TOTAL_COUNT
+            FROM {global_table}
+            WHERE {global_where}
+            """
+            
+            result = self.session.sql(count_query).to_pandas()
+            return int(result.iloc[0]['TOTAL_COUNT'])
+        except Exception as e:
+            st.error(f"Error fetching global rules count: {str(e)}")
+            return 0
     
     def get_filter_options(self, customer: str) -> Dict[str, list]:
         """Get unique filter options from the rules data"""
@@ -414,7 +630,7 @@ class SnowflakeDataProvider(DataProvider):
             self.session.sql(update_query).collect()
             st.success(f"🎉 Rule {rule_id} updated successfully in {environment} environment!")
             return True
-            
+                
         except Exception as e:
             st.error(f"Error updating rule: {str(e)}")
             return False
