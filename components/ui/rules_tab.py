@@ -241,7 +241,7 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         st.info("No custom rules found for this customer.")
         st.session_state.custom_selected_rules = []
     
-    # Global Rules Section
+    # Global Rules Section (Read-only)
     st.markdown("### Global")
     st.markdown("Rules that apply to all customers. If no customer-specific rule overrides them.")
     
@@ -253,11 +253,7 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
         global_rules_df = pd.DataFrame()
     
     if not global_rules_df.empty:
-        # Initialize global selection state
-        if 'global_selected_rules' not in st.session_state:
-            st.session_state.global_selected_rules = []
-        
-        # Create dynamic column configuration for global rules
+        # Create dynamic column configuration for global rules (read-only)
         global_column_config = {}
         
         # Build column configuration for available columns
@@ -265,55 +261,38 @@ def render_rules_tab(data_provider: DataProvider, customer: str):
             if col in column_mappings:
                 remote_col, display_name = column_mappings[col]
                 if col in ["RULE_ID", "PRIORITY_ORDER"]:
-                    global_column_config[col] = st.column_config.NumberColumn(display_name, width="small")
+                    global_column_config[col] = st.column_config.NumberColumn(display_name, width="small", disabled=True)
                 elif col in ["CREATED_DATE", "MODIFIED_DATE"]:
-                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium")
+                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium", disabled=True)
                 else:
-                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20)
+                    global_column_config[col] = st.column_config.TextColumn(display_name, width="medium", max_chars=20, disabled=True)
             else:
                 # Default configuration for unmapped columns
-                global_column_config[col] = st.column_config.TextColumn(col, width="medium", max_chars=20)
+                global_column_config[col] = st.column_config.TextColumn(col, width="medium", max_chars=20, disabled=True)
         
-        # Display global rules table with selection capability
-        selected_global_rows = st.dataframe(
+        # Display global rules table (read-only, no selection)
+        st.dataframe(
             global_rules_df,
             use_container_width=True,
             hide_index=True,
             column_config=global_column_config,
-            key="global_rules_table",
-            selection_mode="multi-row",
-            on_select="rerun"
+            key="global_rules_table"
         )
         
-        # Handle global rules selection
-        if selected_global_rows.selection.rows:
-            # Get selected global rules
-            selected_indices = selected_global_rows.selection.rows
-            selected_global_rules = global_rules_df.iloc[selected_indices].to_dict('records')
-            
-            # Store selected global rules in session state
-            st.session_state.global_selected_rules = selected_global_rules
-            
-            # Display selection info
-            st.info(f"📋 {len(selected_global_rules)} global rule(s) selected for editing")
-        else:
-            # Clear selection if no rows selected
-            st.session_state.global_selected_rules = []
-            st.info("💡 Select global rules using the checkboxes to edit them")
+        # Clear any global selection state since global rules are read-only
+        st.session_state.global_selected_rules = []
     else:
         st.info("No global rules found.")
         st.session_state.global_selected_rules = []
     
-    # Combine custom and global selected rules
+    # Only use custom rules for selection (global rules are read-only)
     custom_selected = st.session_state.get('custom_selected_rules', [])
-    global_selected = st.session_state.get('global_selected_rules', [])
-    all_selected_rules = custom_selected + global_selected
-    st.session_state.selected_rules = all_selected_rules
+    st.session_state.selected_rules = custom_selected
     
-    # Display selected count
-    selected_count = len(all_selected_rules)
+    # Display selected count (only custom rules)
+    selected_count = len(custom_selected)
     if selected_count > 0:
-        st.info(f"📋 {selected_count} rule(s) selected")
+        st.info(f"📋 {selected_count} custom rule(s) selected")
     
     # All dialogs are now handled by centralized dialog manager in main.py
 
