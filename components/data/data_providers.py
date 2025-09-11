@@ -132,16 +132,16 @@ class SnowflakeDataProvider(DataProvider):
         if filters.get('provider') and filters['provider'] != 'All Providers':
             where_conditions.append(f"PROVIDER_ALIAS = '{filters['provider']}'")
         
-        # Charge name filter (regex support for both custom and global rules)
+        # Charge name filter (exact matching for both custom and global rules)
         if filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-            charge_name = filters['charge_name'].replace("\\", "\\\\")  # Escape backslashes
+            charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
             # For custom rules, filter on CHARGE_MAPPING_RULE
             # For global rules, filter on CHARGE_REGEX_RULE
             rule_type = filters.get('rule_type', 'All')
             if rule_type == "Custom":
-                where_conditions.append(f"REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')")
+                where_conditions.append(f"CHARGE_MAPPING_RULE = '{charge_name}'")
             elif rule_type == "Global":
-                where_conditions.append(f"REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')")
+                where_conditions.append(f"CHARGE_REGEX_RULE = '{charge_name}'")
             # For "All" rule type, we don't add charge name filtering here
             # as it will be handled separately for each table
         
@@ -176,8 +176,8 @@ class SnowflakeDataProvider(DataProvider):
         
         # For "All" rule type with charge name filter, add charge name filtering to custom rules
         if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-            charge_name = filters['charge_name'].replace("\\", "\\\\")
-            custom_where += f" AND REGEXP_LIKE(CHARGE_MAPPING_RULE, '{charge_name}')"
+            charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+            custom_where += f" AND CHARGE_MAPPING_RULE = '{charge_name}'"
         
         return f"""
         SELECT 
@@ -208,8 +208,8 @@ class SnowflakeDataProvider(DataProvider):
         
         # For "All" rule type with charge name filter, add charge name filtering to global rules
         if filters.get('rule_type') == 'All' and filters.get('charge_name') and filters['charge_name'] != 'All Charge Names':
-            charge_name = filters['charge_name'].replace("\\", "\\\\")
-            global_where += f" AND REGEXP_LIKE(CHARGE_REGEX_RULE, '{charge_name}')"
+            charge_name = filters['charge_name'].replace("'", "''")  # Escape single quotes for SQL
+            global_where += f" AND CHARGE_REGEX_RULE = '{charge_name}'"
         
         return f"""
         SELECT 
